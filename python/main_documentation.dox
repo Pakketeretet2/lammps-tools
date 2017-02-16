@@ -8,6 +8,8 @@
 LAMMPS-Tools is a collection of useful analysis tools for LAMMPS. The package
 consists of some Python front-end scripts and C++-library as backend. The
 library performs heavy computions and analysis, while the Python scripts
-glue everything together in a nice high-level environment.
+glue everything together in a high-level environment.
+
+To see the functionality of the python scripts, check the lammpstools module.
 
 */
