@@ -12,6 +12,12 @@ You can then read them by opening the
 
 To use all functionality, compile and install the C++ lib first by running
 "make" in the main dir. 
-
+The C++ lib optionally depends on the following libraries:
+  CGAL
+  armadillo
+  lammps (compiled as a shared library)
+  icp
+  gsd
+By default, all dependencies are disabled.
 
 
