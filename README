@@ -1,7 +1,17 @@
-These are various scripts and a C++ lib to do analysis on
+These are various scripts and a C++11 lib to do analysis on
 LAMMPS data/dump files, although it should be fairly
 straightforward to extend it to other types of simulation formats.
 
-To use all functionality, compile and install the C++ lib first.
+This software is, and probably always will be, very beta. Some stuff
+is stable or at least usable, but due to the ad-hoc nature of the project,
+it will always be prone to change and will never be finished.
+
+I try to add documentation as much as possible, you can make the docs by 
+running "make dox" dir. This requires doxygen and graphviz.
+You can then read them by opening the 
+
+To use all functionality, compile and install the C++ lib first by running
+"make" in the main dir. 
+
 
 
