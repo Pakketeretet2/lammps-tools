@@ -1,0 +1,13 @@
+// Use the C/C++ style doxygen here. Is easier and for some reason doxygen does
+// not pick up on the python way...
+
+/*!
+\mainpage LAMMPS-Tools index
+
+\section intro_sec Introduction
+LAMMPS-Tools is a collection of useful analysis tools for LAMMPS. The package
+consists of some Python front-end scripts and C++-library as backend. The
+library performs heavy computions and analysis, while the Python scripts
+glue everything together in a nice high-level environment.
+
+*/

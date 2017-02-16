@@ -1,0 +1,8 @@
+This dir contains all the cpp files that make up the functions of the
+library that I thought were too slow in Python. You can run them by
+loading the shared object built from all these sources. Note that because
+Python really only supports a C-style library, the interfaces (i.e., the
+stuff you would actually call from python) need to be wrapped in an
+'extern "C" { ... }'.
+
+Note that for some features it uses boost::python, make sure you have that.

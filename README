@@ -1,0 +1,7 @@
+These are various scripts and a C++ lib to do analysis on
+LAMMPS data/dump files, although it should be fairly
+straightforward to extend it to other types of simulation formats.
+
+To use all functionality, compile and install the C++ lib first.
+
+

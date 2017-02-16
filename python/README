@@ -1,0 +1,14 @@
+This is a set of python utilities for analysis/postprocessing of lammps data.
+The utilities make use of a C/C++ library for some of the heavy lifting, so
+that they are not too slow.
+
+Requirements:
+Python 2 (I've only used 2.7, so that one works)
+numpy
+scipy
+ctypes
+a C/C++ compiler (clang and gcc work)
+
+License stuff:
+Since LAMMPS is GPLv2, it makes most sense to "release" this software under
+that license as well, even though it is only for internal use at the moment.

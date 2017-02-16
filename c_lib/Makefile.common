@@ -1,0 +1,77 @@
+SHELL = /bin/sh
+
+CC = g++
+FLAGS = -std=c++11 -g -pedantic -frounding-math -shared -fPIC -g \
+	-Werror=int-conversion -Werror=implicit \
+	-Werror=return-type -Werror=uninitialized -Wall \
+	-lboost_iostreams
+
+PY_DIR     = "/usr/include/python2.7/"
+LAMMPS_DIR = "/home/stefan/projects/lammps-icms/src/"
+TIMER_DIR  = "$(HOME)/projects/my_timer/lib/"
+
+LNK = -L./ -L$(TIMER_DIR) -lm -larmadillo -lpython2.7
+INC = -I./ -I$(PY_DIR) -I$(TIMER_DIR)
+
+
+EXT = cpp
+SRC = $(wildcard *.$(EXT))
+
+
+# Conditional flags:
+ifeq ($(HAVE_LIB_CGAL), 1)
+	LNK   += -lCGAL -lgmp
+	FLAGS += -DHAVE_LIB_CGAL
+endif
+
+ifeq ($(VERBOSE_LIB), 1)
+	FLAGS += -DVERBOSE_LIB
+endif
+
+ifeq ($(HAVE_LIB_ICP), 1)
+	FLAGS += -DHAVE_LIB_ICP -I./libicp/ -I./libicp/src/
+	SRC   += $(wildcard ./libicp/src/*.$(EXT))
+endif
+
+ifeq ($(HAVE_LIB_LAMMPS), 1)
+# LAMMPS-features depend on MPI, so then it needs to be compiled with mpicxx
+	CC      =  mpicxx
+	LNK     += -llammps
+	FLAGS   += -DHAVE_LIB_LAMMPS
+	INC     += -I$(LAMMPS_DIR)
+	LMP_SRC := $(shell ls $(LAMMPS_DIR)/manifold_*.$(EXT) | grep -v rattle)
+	SRC     += $(LMP_SRC)
+endif
+
+
+ifeq ($(HAVE_LIB_ARMADILLO), 1)
+	LNK += -larmadillo
+endif
+
+ifeq ($(HAVE_LIB_GSD), 1)
+	FLAGS += -DHAVE_GSD
+endif
+
+
+COMP = $(CC) $(FLAGS) $(INC)
+LINK = $(CC) $(FLAGS) $(INC) $(LNK)
+AR   = ar rcs
+
+OBJ_DIR = Obj
+OBJ = $(SRC:%.$(EXT)=$(OBJ_DIR)$(S)%.o)
+OBJ_DIRS = $(dir $(OBJ))
+DEPS = $(OBJ:%.o=%.d)
+
+.PHONY: dirs all help clean print-flags
+
+OBJ_GUARD = $(OBJ_DIR)$(S).guard
+# For windows:
+#MAKE_DIR = $(if exist $(1),,mkdir $(1))
+#S=\\
+# Linux and Unix-like:
+MAKE_DIR = mkdir -p $(1)
+S=/
+
+LIB_DIR=$(HOME)/lib
+
+

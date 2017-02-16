@@ -1,0 +1,20 @@
+# First set some options:
+# For delaunay triangulations:
+HAVE_LIB_CGAL = 0
+# For more output:
+VERBOSE_LIB   = 1
+# For stuff that needs a LAMMPS lib:
+HAVE_LIB_LAMMPS = 1
+# For armadillo:
+HAVE_LIB_ARMADILLO = 1
+# For ICP:
+HAVE_LIB_ICP = 1
+
+
+include Makefile.common
+
+EXE = liblammpstools_no_cgal.so
+
+OBJ_DIR = Obj_no_cgal
+
+include Makefile.recipes

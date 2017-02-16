@@ -1,0 +1,29 @@
+# First set some options:
+# For delaunay triangulations:
+HAVE_LIB_CGAL = 1
+# For more output:
+VERBOSE_LIB   = 1
+# For stuff that needs a LAMMPS lib:
+HAVE_LIB_LAMMPS = 1
+# For armadillo:
+HAVE_LIB_ARMADILLO = 1
+# For ICP:
+HAVE_LIB_ICP = 1
+
+include Makefile.common
+
+# override the FLAGS:
+FLAGS = -std=c++11 -g -pedantic -frounding-math -g \
+	-Werror=int-conversion -Werror=implicit \
+	-Werror=return-type -Werror=uninitialized -Wall \
+	-lboost_iostreams
+
+
+EXE = liblammpstools.a
+
+OBJ_DIR = Obj_static
+
+include Makefile.recipes
+
+$(EXE) : $(OBJ)
+	$(AR) $@ $(OBJ)

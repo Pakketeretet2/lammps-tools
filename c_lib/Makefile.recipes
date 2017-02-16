@@ -1,0 +1,43 @@
+
+
+
+all : dirs $(EXE)
+
+dirs : $(OBJ_DIR)
+
+$(OBJ_DIR) :
+	$(call $(MAKE_DIR),$@)
+
+help :
+	@echo "SRC    is   $(SRC)"
+	@echo "OBJ    is   $(OBJ)"
+	@echo "DEPS   is   $(DEPS)"
+	@echo "INC    is   $(INC)"
+	@echo "LIB    is   $(LIB)"
+
+
+$(EXE) : $(OBJ)
+	$(LINK) $(OBJ) -o $@
+
+$(OBJ_DIR)$(S)%.o : %.$(EXT)
+	$(call MAKE_DIR,$(dir $@))
+	$(COMP) -c $< -o $@
+	$(COMP) -M -MT '$@' $< -MF $(@:%.o=%.d)
+
+clean:
+	rm -r $(OBJ_DIR)
+	rm -f $(EXE)
+
+
+install: $(EXE)
+	$(call MAKE_DIR,$(LIB_DIR))
+	cp $(EXE) $(LIB_DIR)
+
+
+uninstall:
+	rm -rf $(LIB_DIR)/$(subst ../,,$(EXE))
+
+print-flags:
+	@echo "Compilation flags: $(COMP)"
+
+-include $(DEPS)
