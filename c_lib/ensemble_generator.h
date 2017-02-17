@@ -1,6 +1,8 @@
 #ifndef ENSEMBLE_GENERATOR_H
 #define ENSEMBLE_GENERATOR_H
 
+#ifdef HAVE_LIB_LAMMPS
+
 #include "types.h"
 #include "lmptype.h"
 
@@ -34,5 +36,6 @@ void ensemble_generate_impl( arr3f &x, py_int N, arr1i &ids, arr1i &types,
                              const char *mname, const char *man_args,
                              py_float rc, py_int seed );
 
+#endif // HAVE_LIB_LAMMPS
 
 #endif // ENSEMBLE_GENERATOR_H
