@@ -23,7 +23,6 @@ import time
 import math
 
 from histogram            import *
-from sphere_crystal_fit   import point_morph
 from normal_mode_analysis import normal_mode_analysis
 from normal_mode_analysis import normal_mode_analysis_clib
 from melting_analysis     import lindemann
