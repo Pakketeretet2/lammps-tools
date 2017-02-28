@@ -8,7 +8,6 @@ This package contains functions for extracting dump local files.
 import numpy as np
 import gzip
 import os
-from b.meta.tterprint import printf
 import dumpreader
 
 class block_data_local:
@@ -29,16 +28,16 @@ class dumpreader_local:
         self.n_time_steps = 0
         
         if not os.path.isfile(fname):
-            print "File %s does not exist!" % fname
+            print("File %s does not exist!" % fname)
             self.bad_file = 1
             return
 
         # Check if zipped:
         if fname[len(fname)-2:] == "gz":
-            print "Opening zipped file %s" % fname
+            print("Opening zipped file %s" % fname)
             self.dump_file = gzip.GzipFile(fname)
         else:
-            print "Opening plain file %s" % fname
+            print("Opening plain file %s" % fname)
             self.dump_file = open(fname)
             
 
@@ -129,25 +128,25 @@ class dumpreader_local:
         """
 
         if self.bad_file:
-            print "Called getblock on bad file!"
+            print("Called getblock on bad file!")
             return None
         
         if self.at_eof:
-            print "At EOF already, cannot get more blocks!"
+            print("At EOF already, cannot get more blocks!")
             return self.last_block
         
         if N <= 0:
-            print "I expect N >= 1, returning next block..."
+            print("I expect N >= 1, returning next block...")
             N = 1
         for i in range(0,N):
             tmp = self.getblock_impl()
             if tmp == None:
                 self.at_eof = 1
                 if pass_last_if_at_eof:
-                    print "Encountered EOF, returning last block (if any)"
+                    print("Encountered EOF, returning last block (if any)")
                     return self.last_block
                 else:
-                    print "Encountered EOF, returning None"
+                    print("Encountered EOF, returning None")
                     return None
             else:
                 b = tmp
@@ -171,54 +170,51 @@ class dumpreader_local:
 def block_to_dump_plain(b, fname):
     dump_file = open(fname,"w")
 
-    print >>dump_file, "ITEM: TIMESTEP"
-    print >>dump_file, b.meta.t
-    print >>dump_file, "ITEM: NUMBER OF ATOMS"
-    print >>dump_file, b.meta.N
-    print >>dump_file, b.meta.domain.box_line
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[0], b.meta.domain.xhi[0] )
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[1], b.meta.domain.xhi[1] )
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[2], b.meta.domain.xhi[2] )
+    print("ITEM: TIMESTEP", file = dump_file)
+    print(b.meta.t, file = dump_file)
+    print("ITEM: NUMBER OF ATOMS", file = dump_file)
+    print(b.meta.N, file = dump_file)
+    print(b.meta.domain.box_line, file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[0], b.meta.domain.xhi[0] ), file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[1], b.meta.domain.xhi[1] ), file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[2], b.meta.domain.xhi[2] ), file = dump_file)
     atom_string = "ITEM: ATOMS id type x y z"
     for c in b.other_cols:
         if c.N != b.meta.N:
-            print >> sys.stderr, "Error! Column size does not match rest of block data!"
+            print("Error! Column size does not match rest of block data!", file = sys.stderr)
         atom_string += " " + c.header
-    print >>dump_file, atom_string
+    print(atom_string, file = dump_file)
     for i in range(0,b.meta.N):
         atom_line = "%d %d %f %f %f" % (b.ids[i], b.types[i],
                                         b.x[i][0], b.x[i][1], b.x[i][2])
         for c in b.other_cols:
             atom_line += " %f" % c.data[i]
-        print >>dump_file, atom_line
+        print(atom_line, file = dump_file)
     
 
 def block_to_dump_gzip(b, fname):
     dump_file = gzip.GzipFile(fname,"w")
 
-    print >>dump_file, "ITEM: TIMESTEP"
-    print >>dump_file, b.meta.t
-    print >>dump_file, "ITEM: NUMBER OF ATOMS"
-    print >>dump_file, b.meta.N
-    print >>dump_file, b.meta.domain.box_line
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[0], b.meta.domain.xhi[0] )
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[1], b.meta.domain.xhi[1] )
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[2], b.meta.domain.xhi[2] )
+    print("ITEM: TIMESTEP", file = dump_file)
+    print(b.meta.t, file = dump_file)
+    print("ITEM: NUMBER OF ATOMS", file = dump_file)
+    print(b.meta.N, file = dump_file)
+    print(b.meta.domain.box_line, file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[0], b.meta.domain.xhi[0] ), file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[1], b.meta.domain.xhi[1] ), file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[2], b.meta.domain.xhi[2] ), file = dump_file)
     atom_string = "ITEM: ATOMS id type x y z"
     for c in b.other_cols:
         if c.N != b.meta.N:
-            print >> sys.stderr, "Error! Column size does not match rest of block data!"
+            print("Error! Column size does not match rest of block data!", file = sys.stderr)
         atom_string += " " + c.header
-    print >>dump_file, atom_string
+    print(atom_string, file = dump_file)
     for i in range(0,b.meta.N):
         atom_line = "%d %d %f %f %f" % (b.ids[i], b.types[i],
                                         b.x[i][0], b.x[i][1], b.x[i][2])
         for c in b.other_cols:
             atom_line += " %f" % c.data[i]
-        print >>dump_file, atom_line
-    
-
-    
+        print(atom_line, file = dump_file)
 
     
 def block_to_dump(b,fname, overwrite = False):
@@ -227,10 +223,10 @@ def block_to_dump(b,fname, overwrite = False):
     if os.path.exists(fname):
         if os.path.isfile(fname):
             if not overwrite:
-                print "File already exists! Not overwriting!"
+                print("File already exists! Not overwriting!")
                 return
         else:
-            print "Given file name is already a dir! Not writing!"
+            print("Given file name is already a dir! Not writing!")
             return
     
     if fname[len(fname)-2:] == "gz":

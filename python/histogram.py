@@ -16,12 +16,12 @@ def make_histogram( yy, y0, y1, Nbins ):
 
     for y in yy:
     
-	ibin = int( (y - y0) / dx)
-	if ibin >= Nbins or ibin < 0:
+        ibin = int( (y - y0) / dx)
+        if ibin >= Nbins or ibin < 0:
             ++misses
         else:
-	    hist[ibin] += a;
-	    count += 1.0;
+            hist[ibin] += a;
+            count += 1.0;
             mean  += y
 
     if count > 0:
@@ -30,5 +30,4 @@ def make_histogram( yy, y0, y1, Nbins ):
     modal     = bins[modal_bin]
     
     return bins, hist, mean, modal
-
 

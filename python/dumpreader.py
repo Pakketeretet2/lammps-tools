@@ -9,6 +9,7 @@ import gzip
 import os
 import sys
 
+
 class domain_data:
     """! A struct containing info about the domain of the dump file"""
     def __init__(self,xlo,xhi,periodic,box_line):
@@ -55,7 +56,7 @@ class dump_col:
 def append_col(block, col):
     """! Appends column to other_cols of block"""
     if( block.meta.N != col.N):
-        print "Size mismatch between column and block info!"
+        print("Size mismatch between column and block info!")
         return
     block.other_cols.append(col)
     return block
@@ -191,7 +192,7 @@ class dumpreader:
         if z_tag == 'zs': self.scaled_z = True
         
         if not os.path.isfile(fname):
-            print >>sys.stderr, "File %s does not exist!" % fname
+            print("File %s does not exist!" % fname, file = sys.stderr)
             self.bad_file = 1
             return
         self.smooth_open(fname)
@@ -201,10 +202,10 @@ class dumpreader:
         """! Gracefully opens file, checks if gzipped or not. """
         # Check if zipped:
         if fname[len(fname)-2:] == "gz":
-            print >>sys.stderr, "Opening zipped file %s" % fname
+            print("Opening zipped file %s" % fname, file = sys.stderr)
             self.dump_file = gzip.GzipFile(fname)
         else:
-            print >>sys.stderr, "Opening plain file %s" % fname
+            print( "Opening plain file %s" % fname, file = sys.stderr)
             self.dump_file = open(fname)
 
     def get_block_meta(self):
@@ -212,7 +213,7 @@ class dumpreader:
         
         if len(line) == 0:
             at_eof = 1;
-            print >> sys.stderr, "Line was empty! Returning None!"
+            print("Line was empty! Returning None!", file = sys.stderr)
             return None, None;
         line = line.rstrip()
 
@@ -223,14 +224,14 @@ class dumpreader:
         while True:
             if line == "ITEM: TIMESTEP":
                 line = self.dump_file.readline().rstrip()
-                t = long(line)
+                t = int(line)
                 if not self.quiet:
-                    print >>sys.stderr, "At t = %d" % t,
+                    print("At t = %d" % t, file = sys.stderr, end = "")
             elif line == "ITEM: NUMBER OF ATOMS":
                 line = self.dump_file.readline().rstrip()
-                N = long(line)
+                N = int(line)
                 if not self.quiet:
-                    print >>sys.stderr, ", got %d atoms" % N,
+                    print(", got %d atoms" % N, file = sys.stderr, end = "")
             elif line.startswith( "ITEM: BOX BOUNDS " ):
                 # Extract the periodicity info
                 dom.box_line = line
@@ -254,9 +255,10 @@ class dumpreader:
                 dom.xlo[2] = float(data[0])
                 dom.xhi[2] = float(data[1])
                 if not self.quiet:
-                    print >>sys.stderr, ", box = [%1.2f,%1.2f] x [%1.2f,%1.2f] x [%1.2f,%1.2f], periodic = %d" % \
+                    print(", box = [%1.2f,%1.2f] x [%1.2f,%1.2f] x [%1.2f,%1.2f], periodic = %d" % \
                         ( dom.xlo[0], dom.xhi[0], dom.xlo[1], dom.xhi[1],
                           dom.xlo[2], dom.xhi[2], dom.periodic ),
+                          file = sys.stderr, end = "")
 
             elif line.startswith("ITEM: ATOMS"):
                 #if not self.quiet:
@@ -264,7 +266,7 @@ class dumpreader:
                 return meta, line
             else:
 
-                print >> sys.stderr, "line '", line, "' not recognized! Returning None!"
+                print("line '", line, "' not recognized! Returning None!", file = sys.stderr )
                 return None, None
 
             line = self.dump_file.readline().rstrip()
@@ -280,7 +282,7 @@ class dumpreader:
         dom = domain_data(xlo, xhi, 0, "")
         
         if self.at_eof:
-            print >> sys.stderr, "At EOF already! Returning None!"
+            print("At EOF already! Returning None!", file = sys.stderr)
             return None
 
         meta, line = self.get_block_meta()
@@ -318,8 +320,8 @@ class dumpreader:
 
 
         if any( x for x in [ i_idx, t_idx, x_idx, y_idx, z_idx ] if x < 0 ):
-            print >> sys.stderr, i_idx, " ", t_idx, " ", x_idx, " ", y_idx, " ", z_idx
-            print >> sys.stderr, "Some index not set! Aborting!"
+            print(i_idx, " ", t_idx, " ", x_idx, " ", y_idx, " ", z_idx)
+            print("Some index not set! Aborting!")
             return None
 
         x          = np.zeros( [meta.N, 3], dtype = float )
@@ -395,40 +397,40 @@ class dumpreader:
         """
 
         if self.bad_file:
-            print >>sys.stderr, "Called getblock on bad file!"
+            print("Called getblock on bad file!", file = sys.stderr)
             return None
         
         if self.at_eof:
-            print >>sys.stderr, "At EOF already, cannot get more blocks!"
+            print("At EOF already, cannot get more blocks!", file = sys.stderr)
             return self.last_block
         
         if N <= 0:
-            print >>sys.stderr, "I expect N >= 1, returning next block..."
+            print("I expect N >= 1, returning next block...", file = sys.stderr)
             N = 1
         for i in range(0,N):
             tmp = self.getblock_impl()
             if tmp == None:
                 self.at_eof = 1
                 if pass_last_if_at_eof:
-                    print >>sys.stderr, "Encountered EOF, returning last block (if any)"
+                    print("Encountered EOF, returning last block (if any)", file = sys.stderr)
                     return self.last_block
                 else:
-                    print >>sys.stderr, "Encountered EOF, returning None"
+                    print("Encountered EOF, returning None", file = sys.stderr)
                     return None
             else:
                 self.last_block = tmp
                 b = tmp
-        if not self.quiet: print >> sys.stderr, "Returning block at ", b.meta.t
+        if not self.quiet: print("Returning block at ", b.meta.t, file = sys.stderr)
         return b
 
     def fast_forward(self,Nblocks=1):
         """! Fast-forwards Nblocks. """
         if self.bad_file:
-            print >>sys.stderr, "Called getblock on bad file!"
+            print("Called getblock on bad file!", file = sys.stderr)
             return None
 
         if self.at_eof:
-            print >>sys.stderr, "At EOF already, cannot get more blocks!"
+            print("At EOF already, cannot get more blocks!", file = sys.stderr)
             return self.last_block
 
         counter = 0
@@ -436,7 +438,7 @@ class dumpreader:
             meta, line = self.get_block_meta()
             if (meta == None) or (line == None):
                 # Gone too far
-                print >> sys.stderr, "Forwarded past EOF!"
+                print("Forwarded past EOF!", file = sys.stderr)
                 self.at_eof = True
                 return None
             
@@ -446,8 +448,8 @@ class dumpreader:
 
             counter += 1
             
-        print >> sys.stderr, "Forwarded %d lines. Next line is now:" % meta.N
-        print >> sys.stderr, "'%s'" % line
+        print("Forwarded %d lines. Next line is now:" % meta.N, file = sys.stderr)
+        print("'%s'" % line, file = sys.stderr)
         
     def getblock_at_time(self,tstep):
         while not self.at_eof:
@@ -486,17 +488,17 @@ def block_to_dump_write(b, fname, write_mode = "w", file_mode = "plain"):
     elif file_mode == "gz":
         dump_file = gzip.GzipFile(fname,write_mode)
     else:
-        print >>sys.stderr, "File mode %s does not exist!" % file_mode
+        print("File mode %s does not exist!" % file_mode, file = sys.stderr)
         sys.exit(-1)
 
-    print >>dump_file, "ITEM: TIMESTEP"
-    print >>dump_file, b.meta.t
-    print >>dump_file, "ITEM: NUMBER OF ATOMS"
-    print >>dump_file, b.meta.N
-    print >>dump_file, b.meta.domain.box_line
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[0], b.meta.domain.xhi[0] )
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[1], b.meta.domain.xhi[1] )
-    print >>dump_file, "%f  %f" % ( b.meta.domain.xlo[2], b.meta.domain.xhi[2] )
+    print("ITEM: TIMESTEP", file = dump_file)
+    print(b.meta.t, file = dump_file)
+    print("ITEM: NUMBER OF ATOMS", file = dump_file)
+    print(b.meta.N, file = dump_file)
+    print(b.meta.domain.box_line, file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[0], b.meta.domain.xhi[0] ), file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[1], b.meta.domain.xhi[1] ), file = dump_file)
+    print("%f  %f" % ( b.meta.domain.xlo[2], b.meta.domain.xhi[2] ), file = dump_file)
 
     if b.meta.atom_style == "atomic":
         atom_string = "ITEM: ATOMS id type x y z"
@@ -505,21 +507,21 @@ def block_to_dump_write(b, fname, write_mode = "w", file_mode = "plain"):
     
     for c in b.other_cols:
         if c.N != b.meta.N:
-            print "Error! Column size does not match rest of block data!"
+            print("Error! Column size does not match rest of block data!")
         atom_string += " " + c.header
-    print >>dump_file, atom_string
+    print(atom_string, file = dump_file)
     for i in range(0,b.meta.N):
         #atom_line = "%d %d %f %f %f" % (b.ids[i], b.types[i],
         #                                b.x[i][0], b.x[i][1], b.x[i][2])
         if b.meta.atom_style == "atomic":
-            print >>dump_file, b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2],
+            print(b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2], end = "", file = dump_file)
         elif b.meta.atom_style == "molecule":
-            print >>dump_file, b.ids[i], b.mol[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2],
+            print(b.ids[i], b.mol[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2], end = "", file = dump_file)
 
 
         for c in b.other_cols:
-            print >>dump_file, c.data[i],
-        print >>dump_file, ""
+            print(c.data[i], file = dump_file, end = "")
+        print("", file = dump_file)
     
 
     
@@ -547,19 +549,19 @@ def block_to_data(b,fname, overwrite = False):
     
     f = open(fname, write_mode)
 
-    print >>f, "LAMMPS data file from lammpstools.py."
-    print >>f, ""
-    print >>f, "%d atoms"      % natoms
-    print >>f, "%d atom types" % ntypes
-    print >>f, ""
-    print >>f, "%f %f xlo xhi" % (b.meta.domain.xlo[0], b.meta.domain.xhi[0])
-    print >>f, "%f %f ylo yhi" % (b.meta.domain.xlo[1], b.meta.domain.xhi[1])
-    print >>f, "%f %f zlo zhi" % (b.meta.domain.xlo[2], b.meta.domain.xhi[2])
-    print >>f, ""
-    print >>f, "Atoms"
-    print >>f, ""
+    print("LAMMPS data file from lammpstools.py.", file = f )
+    print("", file = f )
+    print("%d atoms"      % natoms, file = f )
+    print("%d atom types" % ntypes, file = f )
+    print("", file = f )
+    print("%f %f xlo xhi" % (b.meta.domain.xlo[0], b.meta.domain.xhi[0]), file = f )
+    print("%f %f ylo yhi" % (b.meta.domain.xlo[1], b.meta.domain.xhi[1]), file = f )
+    print("%f %f zlo zhi" % (b.meta.domain.xlo[2], b.meta.domain.xhi[2]), file = f )
+    print("", file = f )
+    print("Atoms", file = f )
+    print("", file = f )
     for i in range(0,b.meta.N):
-        print >>f, "%d %d %f %f %f" % (b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2])
+        print("%d %d %f %f %f" % (b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2]), file = f )
     
 
 
@@ -567,17 +569,17 @@ def block_to_xyz_write(b, fname, write_mode = "w"):
     """! Dumps block to xyz file. """
 
     fp = open(fname,write_mode)
-    
-    print >>fp, b.meta.N
-    print >>fp, "Atoms. Timestep ", b.meta.t
+
+    print(b.meta.N, file = fp)
+    print("Atoms. Timestep ", b.meta.t, file = fp )
     
     # xyz needs to be sorted along ids...
 
     permutation = np.argsort( b.ids )
 
     for i in permutation:
-        print >> fp, b.types[i], b.x[i][0], b.x[i][1], b.x[i][2],
+        print(b.types[i], b.x[i][0], b.x[i][1], b.x[i][2], file = fp, end = "")
 
         for c in b.other_cols:
-            print >> fp, c.data[i],
-        print >> fp, ""
+            print(c.data[i], file = fp, end = "")
+        print("", file = fp)

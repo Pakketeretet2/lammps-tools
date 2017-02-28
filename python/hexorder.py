@@ -82,22 +82,22 @@ def compute_psi_n( b, axis, rc, order, axis2 = np.array( [0.0, 0.0, 1.0] ),
             py = math.sin( order * theta )
             p[0] += px * nn
             p[1] += py * nn
-            if not quiet: print >> sys.stderr, "p += (%f, %f)" % (px, py)
+            if not quiet: print("p += (%f, %f)" % (px, py), file = sys.stderr)
             
 
         psis[idx][0] = p[0]
         psis[idx][1] = p[1]
         psis[idx][2] = math.sqrt(p[0]*p[0] + p[1]*p[1])
         if not quiet:
-            print >> sys.stderr,  "Neighs of %d = %d, 1 / nn = %f" % (idx, len(n)-1, nn)
+            print("Neighs of %d = %d, 1 / nn = %f" % (idx, len(n)-1, nn), file = sys.stderr)
 
     psi_avg = np.zeros(3)
     n = 1.0 / float(len(psis[:,0]))
     for i in b.ids:
         idx = im[i]
         if not quiet:
-            print >> sys.stderr, "psi_6 of %d = (%f, %f), |psi_6| = %f" % \
-                (i, psis[idx][0], psis[idx][1], psis[idx][2])
+            print("psi_6 of %d = (%f, %f), |psi_6| = %f" % \
+                  (i, psis[idx][0], psis[idx][1], psis[idx][2]), file = sys.stderr)
         # print psis[idx,0], psis[idx,1], psis[idx,2]
         
         psi_avg[0] += n * psis[idx,0]

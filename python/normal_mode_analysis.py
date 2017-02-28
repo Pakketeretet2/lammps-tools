@@ -20,7 +20,7 @@ def normal_mode_analysis(d):
     """ !Performs normal mode analysis on given dump file """
 
     b = d.getblock()
-    print "Initially, t = ", b.meta.t
+    print("Initially, t = ", b.meta.t)
     B = []
 
     while not d.at_eof:
@@ -47,7 +47,7 @@ def normal_mode_analysis(d):
         nframes += 1
     Xavg /= float(nframes)
 
-    print "Average X: ", X
+    print("Average X: ", X)
 
     # Set up the covariance matrix:
     C = np.zeros([N,N])
@@ -91,14 +91,14 @@ def normal_mode_analysis(d):
     # Print the largest nlarge:
 
     nlarge = b.meta.N*3
-    print "The largest %d eigenvalues and eigenvectors are:", nlarge
+    print("The largest %d eigenvalues and eigenvectors are:", nlarge)
     for i in range(0,nlarge):
-        print "%d: %f, " % (i, w[i]),
-        print v[:,i]
+        print("%d: %f, " % (i, w[i]), end = "")
+        print(v[:,i])
 
     fp = open( "eigenvalues_old.dat", "w" )
     for i in range(0,len(w)):
-        print >> fp, "%f" % w[i]
+        print("%f" % w[i], file = fp )
     
     # Sort in order of highest to lowest mode:
     w     = w[permutation]
@@ -120,14 +120,14 @@ def normal_mode_analysis(d):
         bm = dumpreader.block_data( b.meta, b.ids, b.types, np.zeros( [N,3] ) )
         v0 = v[:,k]
         if mode < 0:
-            print >> sys.stderr, "WTF, mode %g is negative?" % mode
+            print("WTF, mode %g is negative?" % mode, file = sys.stderr)
         if math.fabs(mode) <= 1e-12:
             mode = 0.0
         A  = math.sqrt(mode)
-        print "Eigenvalue %d is %f" % (k, mode)
+        print("Eigenvalue %d is %f" % (k, mode))
 
         for t, n in zip(times, range(0,len(times))):
-        # print >> sys.stderr, "t = %f" % t
+
             bm.meta.t = n
             st = math.sin(t)
             for i in range(0, b.meta.N):
@@ -145,7 +145,7 @@ def pass_blocks_to_clib( d ):
 
     b = d.getblock()
     if b is None:
-        print >> sys.stderr, "Block was None, probably dump file %s does not exist?" % dump
+        print("Block was None, probably dump file %s does not exist?" % dump, file = sys.stderr)
         return
 
     
@@ -154,9 +154,9 @@ def pass_blocks_to_clib( d ):
     
     pipe_status = lammpstools.get_pipe( pname )
     if pipe_status != 0:
-        print >> sys.stderr, "Pipe status was not 0 b.meta.t ", pipe_status
+        print("Pipe status was not 0 b.meta.t ", pipe_status, file = sys.stderr)
     else:
-        print >> sys.stderr, "Pipe named %s succesfully opened." % pname
+        print("Pipe named %s succesfully opened." % pname, file = sys.stderr)
 
 
     # Make storage for eigenvectors and eigenvalues
@@ -178,8 +178,8 @@ def pass_blocks_to_clib( d ):
         if b.meta.N <= 0:
             break
         
-        print >> fp,  b.meta.N
-        print >> fp2, b.meta.N
+        print( b.meta.N, file = fp )
+        print( b.meta.N, file = fp2 )
         
         X_sorted = np.zeros( [b.meta.N, 3] )
         
@@ -191,8 +191,8 @@ def pass_blocks_to_clib( d ):
             X_sorted[j][2] = b.x[i][2]
 
         for i in range(0,b.meta.N):
-            print >> fp,  "%1.16f %1.16f %1.16f" % (X_sorted[i][0], X_sorted[i][1], X_sorted[i][2])
-            print >> fp2, "%1.16f %1.16f %1.16f" % (X_sorted[i][0], X_sorted[i][1], X_sorted[i][2])
+            print( "%1.16f %1.16f %1.16f" % (X_sorted[i][0], X_sorted[i][1], X_sorted[i][2]), file = fp )
+            print( "%1.16f %1.16f %1.16f" % (X_sorted[i][0], X_sorted[i][1], X_sorted[i][2]), file = fp2 )
             
         
         b = d.getblock()
@@ -200,15 +200,15 @@ def pass_blocks_to_clib( d ):
     fp.close()
     pipe_status = lammpstools.close_pipe( pname )
 
-    print "Eigenvalues:"
+    print("Eigenvalues:")
     for v in eigenvalues:
-        print "%f" % v
+        print("%f" % v)
     
     
 
     
     if pipe_status != 0:
-        print >> sys.stderr, "Pipe status was not 0 b.meta.t ", pipe_status
+        print( "Pipe status was not 0 b.meta.t ", pipe_status, file = sys.stderr )
     else:
-        print >> sys.stderr, "Pipe named %s succesfully closed." % pname
+        print( "Pipe named %s succesfully closed." % pname, file = sys.stderr )
     

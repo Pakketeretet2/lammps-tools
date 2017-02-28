@@ -88,7 +88,7 @@ def compute_adf( b, R, nbins, itype, jtype, method = None ):
     coords = np.zeros(nbins, dtype=np.float64);
     lammpstools = cdll.LoadLibrary("liblammpstools.so")
     if method is None:
-        print >> sys.stderr, "Please set method explicitly."
+        print("Please set method explicitly.", file = sys.stderr)
         return None
     
     lammpstools.compute_adf( void_ptr(b.x), c_longlong(b.meta.N), void_ptr(b.ids),
@@ -121,7 +121,7 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
         else:         method = 1
     if rc is None:
         if method < 2:
-            print >> sys.stderr, "Methods 0 and 1 DO need rc!"
+            print("Methods 0 and 1 DO need rc!", file = sys.stderr)
             return
         else:
             rc = 0.0 # Set to dummy value
@@ -174,8 +174,8 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
 
     finally:
         if not quiet:
-            print >>sys.stderr, "Received %d ints (%d b.meta.tes) through named pipe %s" \
-                % (ints_read, int_size*ints_read, pname)
+            print("Received %d ints (%d b.meta.tes) through named pipe %s" \
+                  % (ints_read, int_size*ints_read, pname), file = sys.stderr)
 
         if os.path.exists( pname ):
             os.unlink( pname )
@@ -246,7 +246,7 @@ def find_clusters( neighs, ids, thresh = 1 ):
     imap = make_id_map(ids)
 
     if( len(neighs) > 400 ):
-        print >> sys.stderr, "Finding clusters, might take a while...",
+        print("Finding clusters, might take a while...", file = sys.stderr, end = "")
     for i in ids:
         if ids_out[i]: continue
 
@@ -268,7 +268,7 @@ def find_clusters( neighs, ids, thresh = 1 ):
 
     # Filter uniques:
     if( len(neighs) > 400 ):
-        print >> sys.stderr, " Done!"
+        print(" Done!", file = sys.stderr)
     clusters_f = []
     
     for c in clusters:
@@ -336,7 +336,7 @@ def generate_ensemble_on_manifold( N, typ, domain, manifold_name, manifold_args,
     for s in manifold_args:
         manifold_arg_str += s + " "
 
-    print >> sys.stderr, "Manifold arg string = %s" % manifold_arg_str
+    print("Manifold arg string = %s" % manifold_arg_str, file = sys.stderr)
 
     lammpstools = cdll.LoadLibrary("liblammpstools.so")
     lammpstools.ensemble_generate_manifold( void_ptr(x), N, void_ptr(ids_arr),
@@ -359,9 +359,9 @@ def test_ensemble_generator( ):
     
     b = generate_ensemble_on_manifold( 24, 1, d, "sphere", [ "2.0" ], 1.0 )
 
-    print b.meta.N
+    print(b.meta.N)
     for i in range(0,b.meta.N):
-        print "(%f, %f, %f)" % (b.x[i][0], b.x[i][1], b.x[i][2])
+        print("(%f, %f, %f)" % (b.x[i][0], b.x[i][1], b.x[i][2]))
 
     block_to_dump( b, "test.dump" )
 
@@ -453,8 +453,8 @@ def recenter( b, rescale_box = False ):
         b.x[i][1] -= com[1]*c
         b.x[i][2] -= com[2]*c
 
-    print b.meta.domain.xlo
-    print b.meta.domain.xhi
+    print(b.meta.domain.xlo)
+    print(b.meta.domain.xhi)
     
     b.meta.domain.xlo[0] -= com[0]*c
     b.meta.domain.xlo[1] -= com[1]*c
@@ -548,13 +548,13 @@ def triangulation_area( b, triangles ):
     it = 1
     for t in triangles:
         # Heron's formula:
-    	x1 = b.x[t[0]]
+        x1 = b.x[t[0]]
         x2 = b.x[t[1]]
         x3 = b.x[t[2]]
         aa = np.linalg.norm( x1 - x2 )
         bb = np.linalg.norm( x1 - x3 )
         cc = np.linalg.norm( x2 - x3 )
-    	s  = (aa + bb + cc) / 2.0
+        s = (aa + bb + cc) / 2.0
         aaa = math.sqrt( s*(s-aa)*(s-bb)*(s-cc) )
         A  += aaa
         it += 1

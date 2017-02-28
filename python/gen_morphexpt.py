@@ -162,7 +162,7 @@ def gen_morphexpt(pts,ptc_dia = 1., radius_threshold=0.3, resolution_scale=8.,dr
         droplet = skt.droplet_fitting(np.transpose(np.where(blocks)))
     else:
         print >> sys.stderr, "gen_morphexpt, drop_radius = ", drop_radius
-    	droplet = np.empty(4,dtype=np.float64)
+        droplet = np.empty(4,dtype=np.float64)
         droplet[0] = drop_pos[0]
         droplet[1] = drop_pos[1]
         droplet[2] = drop_pos[2]

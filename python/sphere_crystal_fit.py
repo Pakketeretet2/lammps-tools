@@ -64,4 +64,3 @@ def point_morph(x, pt_diam = 1.0, radius_thresh = 0.3, res_scale = 8.0,
     w = skt.dia_backbone_average(bb)
     return inc_rad, inc_diam, l, w, Rf
 
-
