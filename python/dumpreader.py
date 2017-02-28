@@ -55,7 +55,7 @@ class dump_col:
 def append_col(block, col):
     """! Appends column to other_cols of block"""
     if( block.meta.N != col.N):
-        print "Size mismatch b.meta.tween column and block info!"
+        print "Size mismatch between column and block info!"
         return
     block.other_cols.append(col)
     return block
