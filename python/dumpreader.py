@@ -560,8 +560,13 @@ def block_to_data(b,fname, overwrite = False):
     print("", file = f )
     print("Atoms", file = f )
     print("", file = f )
-    for i in range(0,b.meta.N):
-        print("%d %d %f %f %f" % (b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2]), file = f )
+
+    if( b.meta.atom_style == "molecular" ):
+        for i in range(0,b.meta.N):
+            print("%d %d %d %f %f %f" % (b.ids[i], b.mol[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2]), file = f )
+    else:
+        for i in range(0,b.meta.N):
+            print("%d %d %f %f %f" % (b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2]), file = f )
     
 
 

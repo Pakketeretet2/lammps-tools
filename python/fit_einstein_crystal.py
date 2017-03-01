@@ -1,9 +1,16 @@
+"""!
+This module contains code to estimate effective spring constants
+of particles in crystals.
+
+\ingroup lammpstools
+"""
+
 import lammpstools, dumpreader
 import sys, os, numpy as np
 
 
 
-def get_einstein_approx( d, ids, T, dims, alpha = 0.9 ):
+def get_einstein_approx( d, ids, T, dims, alpha = 0.9, silent = True ):
     """ ! Attempts to extract the chemical potential by determining
           effective spring constaints for given ids and using the
           chemical potential of an Einstein crystal. """
@@ -49,10 +56,12 @@ def get_einstein_approx( d, ids, T, dims, alpha = 0.9 ):
             dx2[j][3] = dx2[j][0] + dx2[j][1] + dx2[j][2]
 
             k_eff[j] = dims*T / dx2[j][3]
-            print("%d %d %g %g" % (j, b.meta.t, dx2[j][3], k_eff[j]))
+            if not silent:
+                print("%d %d %g %g" % (j, b.meta.t, dx2[j][3], k_eff[j]))
             
         k_vals.append(k_eff)
         for j in range(0,Ncheck):
             xavg[j] = b.x[ im[ids[j]] ]*alpha + (1 - alpha)*xavg[j]
         b = d.getblock()
     return k_vals
+
