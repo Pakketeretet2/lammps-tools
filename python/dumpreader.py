@@ -35,6 +35,7 @@ class block_data:
         self.ids = ids
         self.types = types
         self.x = x
+        
         if mol is None:
             self.mol = np.zeros( meta.N, dtype = int )
         else:
@@ -165,7 +166,7 @@ def read_raw_pts(fname):
 
 class dumpreader:
     def __init__(self,fname,quiet = True, id_tag = 'id', type_tag = 'type',
-                 x_tag = 'x', y_tag = 'y', z_tag = 'z'):
+                 x_tag = 'x', y_tag = 'y', z_tag = 'z', mol_tag = 'mol'):
         """! Initializes dumpreader with given dump file.
 
         @param fname Name of dump file to read.
@@ -181,11 +182,14 @@ class dumpreader:
         self.x_tag        = x_tag
         self.y_tag        = y_tag
         self.z_tag        = z_tag
+        self.mol_tag      = mol_tag
         self.fname        = fname
 
         self.scaled_x     = False
         self.scaled_y     = False
         self.scaled_z     = False
+
+        self.molecules    = False
 
         if x_tag == 'xs': self.scaled_x = True
         if y_tag == 'ys': self.scaled_y = True
@@ -299,8 +303,17 @@ class dumpreader:
         # Find the right columns
         words = line.split(' ')
         i_idx = t_idx = x_idx = y_idx = z_idx = -1
+        mol_idx = -1
+        
         other_col_idx   = []
         other_col_heads = []
+        # Count number of words:
+        word_count = len(words)
+        print("I got ", word_count, " words.")
+        print("They are:", end="")
+        for w in words:
+            print(" ", w, end = "")
+        print("")
 
         for w, i in zip(words, range(0,len(words))):
             
@@ -314,14 +327,23 @@ class dumpreader:
                 y_idx = i - 2
             elif w == self.z_tag:
                 z_idx = i - 2
+            # Catch the corner case of there being a molecule array:
+            elif (self.mol_tag is not None) and (w == self.mol_tag):
+                mol_idx = i - 2
+                self.molecules = True
+            
             elif( i >= 2 ):
                 other_col_heads.append(w)
                 other_col_idx.append(i-2)
-
+            
 
         if any( x for x in [ i_idx, t_idx, x_idx, y_idx, z_idx ] if x < 0 ):
-            print(i_idx, " ", t_idx, " ", x_idx, " ", y_idx, " ", z_idx)
-            print("Some index not set! Aborting!")
+            print(i_idx, " ", t_idx, " ", x_idx, " ", y_idx, " ", z_idx, file=sys.stderr)
+            print("Some index not set! Aborting!", file=sys.stderr)
+            return None
+        
+        if self.molecules and mol_idx < 0:
+            print("Molecules not set!", file=sys.stderr)
             return None
 
         x          = np.zeros( [meta.N, 3], dtype = float )
@@ -329,7 +351,9 @@ class dumpreader:
         types      = np.zeros( meta.N, dtype = int )
         n_other_cols = len(other_col_heads)
 
-
+        if self.molecules:
+            mol = np.zeros( meta.N, dtype = int )
+        
         #if n_other_cols > 0:
         #    print >> sys.stderr, "Got %d other cols. They are: " % n_other_cols,
         #    for ch in other_col_heads:
@@ -350,6 +374,7 @@ class dumpreader:
         lookup_core[2] = x_idx
         lookup_core[3] = y_idx
         lookup_core[4] = z_idx
+        lookup_mol     = mol_idx
 
 
         for jj, o_idx in zip(range(0,n_other_cols),other_col_idx):
@@ -364,6 +389,11 @@ class dumpreader:
             x[i][0]  = float( words[ lookup_core[2] ] )
             x[i][1]  = float( words[ lookup_core[3] ] )
             x[i][2]  = float( words[ lookup_core[4] ] )
+            
+            if self.molecules:
+                # print("Adding molecule id")
+                mol[i] = int( words[ lookup_mol ] )
+                print("mol[", i, "] = ", mol[i])
 
             if self.scaled_x:
                 Lx = xhi[0] - xlo[0]
@@ -381,11 +411,14 @@ class dumpreader:
                 other_cols[jj][i] = float( words[ lookup_other[jj] ] )
 
         # All done, I think.
-        b = block_data( meta, ids, types, x )
+        if self.molecules:
+            b = block_data( meta, ids, types, x, mol = mol )
+        else:
+            b = block_data( meta, ids, types, x )
+        
         for jj in range(0, n_other_cols):
             occ = dump_col( other_col_heads[jj], other_cols[jj] )
             b = append_col(b, occ)
-        
 
         return b
         
