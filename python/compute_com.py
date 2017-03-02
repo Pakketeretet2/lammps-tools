@@ -100,12 +100,15 @@ def compute_com( b, masses, groups, dims  ):
   @param dims      Number of dimensions of the system (2 or 3)
 """    
 def compute_com_cpp( b, masses, groups, dims ):
-    com = np.zeros( [groups.size + 1, dims], dtype = float )
+
+    Ngroups = max(groups)
+
+    com = np.zeros( [Ngroups + 1, dims], dtype = float )
     
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     lammpstools.center_of_mass( void_ptr(b.x), c_longlong(b.meta.N),
                                 void_ptr(b.ids), void_ptr(b.types),
-                                c_longlong(groups.size), void_ptr(groups),
+                                c_longlong(Ngroups), void_ptr(groups),
                                 void_ptr(masses), void_ptr(b.meta.domain.xlo),
                                 void_ptr(b.meta.domain.xhi),
                                 c_longlong(b.meta.domain.periodic),

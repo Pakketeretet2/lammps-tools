@@ -10,18 +10,19 @@ void com_periodic( const arr3f &x,  const arr1i &ids, const arr1i &types,
                    const arr1f &mass, double xlo, double xhi, int dim,
                    const arr1i &groups, arr3f &com )
 {
-	for( py_int i = 0; i < groups.size(); ++i ){
+	for( py_int i = 0; i < com.size(); ++i ){
 		com[i][dim] = 0.0;
 	}
 
-	py_int Ngroups = groups.size();
+	py_int Ngroups = com.size() - 1;
+	
 	std::vector<double> xi_avg(Ngroups+1);
 	std::vector<double> zeta_avg(Ngroups+1);
 	std::vector<double> M(Ngroups+1);
 	double two_pi = 2.0*math_const::pi;
 
 	double Lx = xhi - xlo;
-	
+
 	for( py_int i = 0; i < x.size(); ++i ){
 		py_int id = ids[i];
 		py_int group_id = groups[i];
@@ -45,14 +46,26 @@ void com_periodic( const arr3f &x,  const arr1i &ids, const arr1i &types,
 		
 		xi_avg[group_idx]   += m * std::cos( theta );
 		zeta_avg[group_idx] += m * std::sin( theta );
+
 	}
 
-	for( int i = 1; i < Ngroups; ++i ){
+	for( int i = 1; i <= Ngroups; ++i ){
 		xi_avg[i]   /= M[i];
 		zeta_avg[i] /= M[i];
 		double theta_avg = std::atan2( -zeta_avg[i], -xi_avg[i] );
+		
 		theta_avg += math_const::pi;
-		com[i][dim] = theta_avg * Lx / two_pi;
+		com[i][dim] = theta_avg * Lx / two_pi + xlo;
+		
+		if( i == 1 && dim == 0 ){
+			std::cerr << "<x> = " << com[i][dim] << ".\n";
+		}
+		if( i == 1 && dim == 1 ){
+			std::cerr << "<y> = " << com[i][dim] << ".\n";
+		}
+		if( i == 1 && dim == 2 ){
+			std::cerr << "<z> = " << com[i][dim] << ".\n";
+		}
 	}
 }
 
@@ -61,11 +74,11 @@ void com_nonperiodic( const arr3f &x,  const arr1i &ids, const arr1i &types,
                       const arr1f &mass, double xlo, double xhi, int dim,
                       const arr1i &groups, arr3f &com )
 {
-	for( py_int i = 0; i < groups.size(); ++i ){
+	for( py_int i = 0; i < com.size(); ++i ){
 		com[i][dim] = 0.0;
 	}
 
-	py_int Ngroups = groups.size();
+	py_int Ngroups = com.size() - 1;
 	std::vector<double> x_avg(Ngroups+1);
 	std::vector<double> M(Ngroups+1);
 	
@@ -81,13 +94,23 @@ void com_nonperiodic( const arr3f &x,  const arr1i &ids, const arr1i &types,
 
 		double m  = mass[i];
 		int group_idx = group_id;
-		M[i]     += m;
-		x_avg[i] += m*x[i][dim];
+
+		M[group_idx]     += m;
+		x_avg[group_idx] += m*x[i][dim];
 	}
 
-	for( int i = 1; i < Ngroups; ++i ){
+	for( int i = 1; i <= Ngroups; ++i ){
 		x_avg[i]   /= M[i];
 		com[i][dim] = x_avg[i];
+		if( i == 1 && dim == 0 ){
+			std::cerr << "<x> = " << x_avg[i] << ".\n";
+		}
+		if( i == 1 && dim == 1 ){
+			std::cerr << "<y> = " << x_avg[i] << ".\n";
+		}
+		if( i == 1 && dim == 2 ){
+			std::cerr << "<z> = " << x_avg[i] << ".\n";
+		}
 	}
 }
 
@@ -107,28 +130,31 @@ void center_of_mass( void *px, py_int N, py_int *pids, py_int *ptypes,
 	
 	arr3f com( pcom, Ngroups + 1 );
 
+	int dim = 0;
 	if( periodic & 1 ){
-		com_periodic( x, ids, types, mass, xlo[0], xhi[0],
-		              0, groups, com );
+		com_periodic( x, ids, types, mass, xlo[dim], xhi[dim],
+		              dim, groups, com );
 	}else{
-		com_nonperiodic( x, ids, types, mass, xlo[0], xhi[0],
-		                 0, groups, com );		
+		com_nonperiodic( x, ids, types, mass, xlo[dim], xhi[dim],
+		                 dim, groups, com );		
 	}
 
+	dim = 1;
 	if( periodic & 2 ){
-		com_periodic( x, ids, types, mass, xlo[1], xhi[1],
-		              1, groups, com );
+		com_periodic( x, ids, types, mass, xlo[dim], xhi[dim],
+		              dim, groups, com );
 	}else{
-		com_nonperiodic( x, ids, types, mass, xlo[1], xhi[1],
-		                 1, groups, com );		
+		com_nonperiodic( x, ids, types, mass, xlo[dim], xhi[dim],
+		                 dim, groups, com );		
 	}
 
+	dim = 2;
 	if( periodic & 4 ){
-		com_periodic( x, ids, types, mass, xlo[2], xhi[2],
-		              2, groups, com );
+		com_periodic( x, ids, types, mass, xlo[dim], xhi[dim],
+		              dim, groups, com );
 	}else{
-		com_nonperiodic( x, ids, types, mass, xlo[2], xhi[2],
-		                 2, groups, com );		
+		com_nonperiodic( x, ids, types, mass, xlo[dim], xhi[dim],
+		                 dim, groups, com );		
 	}
 	
 	

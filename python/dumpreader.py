@@ -8,6 +8,7 @@ import numpy as np
 import gzip
 import os
 import sys
+import copy
 
 
 class domain_data:
@@ -614,3 +615,37 @@ def block_to_xyz_write(b, fname, write_mode = "w"):
         for c in b.other_cols:
             print(c.data[i], file = fp, end = "")
         print("", file = fp)
+
+
+def copy_meta_new_block( b_old, Xnew, id_new = None, type_new = None, mol_new = None ):
+    """! Makes new block_data object for new positions with old meta. """
+
+    bm   = copy.deepcopy(b_old.meta)
+    bm.N = Xnew.shape[0]
+    X    = np.zeros( [ bm.N, 3 ], dtype = float )
+
+    ids   = np.ones( bm.N, dtype = int )
+    types = np.ones( bm.N, dtype = int )
+    mol   = np.ones( bm.N, dtype = int )
+
+    
+    for i in range(0,bm.N):
+        X[i,:]   = Xnew[i,:]
+        
+        if id_new is None:
+            ids[i] = i+1
+        else:
+            ids[i] = id_new[i]
+
+        if type_new is None:
+            types[i] = 1
+        else:
+            types[i] = type_new[i]
+
+        if mol_new is None:
+            mol[i]   = ids[i]
+        else:
+            mol[i] = mol_new[i]
+    
+    bb = block_data( bm, ids, types, X, mol )
+    return bb
