@@ -149,7 +149,7 @@ def pass_blocks_to_clib( d ):
         return
 
     
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     pname = '/tmp/lammpstools_neighborize_pipe_' + str(os.getpid())
     
     pipe_status = lammpstools.get_pipe( pname )

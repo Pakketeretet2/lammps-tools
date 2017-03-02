@@ -1,0 +1,8 @@
+#include "center_of_mass.h"
+
+void center_of_mass( void *px, py_int N, py_int *pids, py_int *ptypes,
+                     py_int Ngroups, py_int *groups, void *com  )
+{
+	
+}
+

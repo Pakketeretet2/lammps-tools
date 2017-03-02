@@ -244,7 +244,10 @@ typedef nd_array<py_float,4,true> arr4fc; ///< 4D floating point array
 typedef nd_array<py_int,4,true>   arr4ic; ///< 4D signed integer array
 
 
+namespace math_const {
 /// The mathematical constant pi
-constexpr const double my_pi = 3.1415926535897932384626433832795028841971693993751;
+constexpr const double pi = 3.1415926535897932384626433832795028841971693993751;
+
+}
 
 #endif /* TYPES_H */

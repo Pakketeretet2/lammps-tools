@@ -141,7 +141,7 @@ def test_convex_hull():
 def test_interface():
     """ !Tests if the types are passed correctly """
 
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
 
     fname = "dump.rdf.gz"
     r = dumpreader(fname)

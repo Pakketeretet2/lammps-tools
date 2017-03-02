@@ -100,9 +100,9 @@ void compute_rdf_impl( const arr3f &x, py_int N, const arr1i &ids,
 
 	double factor;
 	if( dim != 2 ){
-		factor = 4.0*my_pi / (3.0 * V);
+		factor = 4.0*math_const::pi / (3.0 * V);
 	}else{
-		factor = my_pi / V;	
+		factor = math_const::pi / V;	
 	}
 	// factor *= count_j;
 	coord[0] = 0.0;
@@ -163,7 +163,7 @@ void compute_adf_impl( const arr3f &x, py_int N, const arr1i &ids,
 		};
 
 	// Determine bin width in terms of angles:
-	double dtheta = my_pi / (nbins - 1 );
+	double dtheta = math_const::pi / (nbins - 1 );
 	py_float weight = 1.0 / N;
 
 	// Put all bins to 0:
@@ -202,9 +202,9 @@ void compute_adf_impl( const arr3f &x, py_int N, const arr1i &ids,
 		fprintf(stderr, "WARNING! adf at theta = 0 was not 0 but %f!\n",
 			aadf[0]);
 	}
-	double As   = 4 * my_pi * R * R;
+	double As   = 4 * math_const::pi * R * R;
 	double rho  = x.size() / As;
-	double norm = 1.0 / ( rho * 2*my_pi * R * R * dtheta );
+	double norm = 1.0 / ( rho * 2*math_const::pi * R * R * dtheta );
 	for( py_int bin = 1; bin < nbins; ++bin ){
 		py_float theta0 = (bin-1)*dtheta;
 		py_float theta1 = bin*dtheta;

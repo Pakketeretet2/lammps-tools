@@ -10,8 +10,6 @@ This package defines the python interface to the C++ lib and some
 """
 
 
-
-
 from ctypes import *
 import numpy as np
 from typecasts import *
@@ -31,7 +29,7 @@ from minimum_rmsd         import rotate_to_template
 from fit_einstein_crystal import *
 from multiprocessing      import Process
 from ribbon_analysis      import *
-from compute_com          import compute_com
+from compute_com          import compute_com, compute_com_cpp
 
 
 def compute_rdf( b, r0, r1, nbins, itype, jtype, dims, method = None ):
@@ -50,7 +48,7 @@ def compute_rdf( b, r0, r1, nbins, itype, jtype, dims, method = None ):
     """
     rdf    = np.zeros(nbins, dtype=np.float64);
     coords = np.zeros(nbins, dtype=np.float64);
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     if method is None:
         # Guess a good method based on b.meta.N:
         if b.meta.N < 200: method = 0
@@ -85,7 +83,7 @@ def compute_adf( b, R, nbins, itype, jtype, method = None ):
     """
     adf    = np.zeros(nbins, dtype=np.float64);
     coords = np.zeros(nbins, dtype=np.float64);
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     if method is None:
         print("Please set method explicitly.", file = sys.stderr)
         return None
@@ -133,7 +131,7 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
     neighs = []
     
     try:
-        lammpstools = cdll.LoadLibrary("liblammpstools.so")
+        lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
 
         def start_neigh():
             # Make the child neighborize while the main thread reads from the pipe
@@ -337,7 +335,7 @@ def generate_ensemble_on_manifold( N, typ, domain, manifold_name, manifold_args,
 
     print("Manifold arg string = %s" % manifold_arg_str, file = sys.stderr)
 
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     lammpstools.ensemble_generate_manifold( void_ptr(x), N, void_ptr(ids_arr),
                                             void_ptr(types), c_longlong(domain.periodic),
                                             void_ptr(domain.xlo), void_ptr(domain.xhi),
@@ -488,7 +486,7 @@ def recenter( b, rescale_box = False ):
 def triangulate( b, rc, dims, method = None ):
     """ ! Triangulates given block. """
 
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
 
     pname_base = '/tmp/lammpstools_triangulate_pipe_'
     pname = pname_base + str(os.getpid())
@@ -561,14 +559,14 @@ def triangulation_area( b, triangles ):
 
 
 def dump_to_povray( dump_name, povray_name = None ):
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     if povray_name is None:
         povray_name = 0
     lammpstools.dump_to_povray( c_char_p(dump_name), c_char_p(povray_name) )
     
 
 def estimate_line_tension( b, nn_expect, F_per_particle ):
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     gamma = lammpstools.get_line_tension( void_ptr(b.x), c_longlong(b.meta.N),
                                           void_ptr(b.ids), void_ptr(b.types),
                                           c_longlong(b.meta.domain.periodic),

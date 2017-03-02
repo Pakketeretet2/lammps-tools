@@ -7,7 +7,7 @@ FLAGS = -std=c++11 -g -pedantic -frounding-math -shared -fPIC -g \
 	-lboost_iostreams
 
 PY_DIR     = "/usr/include/python2.7/"
-LAMMPS_DIR = "/home/stefan/projects/lammps-icms/src/"
+LAMMPS_DIR = "/home/stefan/projects/lammps-mine/src/"
 TIMER_DIR  = "$(HOME)/projects/my_timer/lib/"
 
 LNK = -L./ -L$(TIMER_DIR) -lm -larmadillo -lpython2.7
@@ -72,6 +72,6 @@ OBJ_GUARD = $(OBJ_DIR)$(S).guard
 MAKE_DIR = mkdir -p $(1)
 S=/
 
-LIB_DIR=$(HOME)/lib
+LIB_DIR=/usr/local/lib
 
 

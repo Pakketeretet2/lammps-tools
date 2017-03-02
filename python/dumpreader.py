@@ -36,7 +36,7 @@ class block_data:
         self.types = types
         self.x = x
         if mol is None:
-            self.mol = np.zeros( meta.N, dtype = int )
+            self.mol = None # np.zeros( meta.N, dtype = int )
         else:
             self.mol = mol
             
@@ -301,6 +301,12 @@ class dumpreader:
         i_idx = t_idx = x_idx = y_idx = z_idx = -1
         other_col_idx   = []
         other_col_heads = []
+        if not self.quiet:
+            print("I got ", word_count, " words.")
+            print("They are:", end="")
+            for w in words:
+                print(" ", w, end = "")
+            print("")
 
         for w, i in zip(words, range(0,len(words))):
             
@@ -365,6 +371,8 @@ class dumpreader:
             x[i][1]  = float( words[ lookup_core[3] ] )
             x[i][2]  = float( words[ lookup_core[4] ] )
 
+                if not self.quiet:
+                    print("mol[", i, "] = ", mol[i])
             if self.scaled_x:
                 Lx = xhi[0] - xlo[0]
                 x[i][0] = Lx * x[i][0] + xlo[0]

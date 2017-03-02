@@ -44,7 +44,7 @@ def call_icp_lib( xi, xj, N, domain, dims = 3, rot_mat = np.eye( 3, dtype = floa
 
     
     
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     cpp_icp_rot = lammpstools.icp_rot
     lammpstools.icp_rot.restype = ctypes.c_double
     
@@ -56,7 +56,7 @@ def call_icp_lib( xi, xj, N, domain, dims = 3, rot_mat = np.eye( 3, dtype = floa
     return rmsd, rotated
 
 def minimum_rmsd_rotate( xi, xj, N, ids, jds, periodic, xlo, xhi, dims ):
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
 
     rotated = np.zeros( [N, 3], dtype = float )
     axis    = np.zeros( 3, dtype = float )
@@ -68,7 +68,7 @@ def minimum_rmsd_rotate( xi, xj, N, ids, jds, periodic, xlo, xhi, dims ):
 def rotate_to_template(b, template, ax1, ax2, ref_axis1, ref_axis2,
                        rotated = None ):
 
-    lammpstools = cdll.LoadLibrary("liblammpstools.so")
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     lammpstools.rotate_to_template.restype = ctypes.c_double
     if (rotated is None): rot_ptr = void_ptr(0)
     else:                 rot_ptr = void_ptr( rotated.x )
