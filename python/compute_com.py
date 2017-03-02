@@ -27,7 +27,7 @@ def com_periodic   ( x, x0, x1, types, masses, filt_indices ):
 
     xk = zk = 0.0
     
-    print >> sys.stderr, "[x0, x1] = [%g, %g]" % (x0,x1)
+    # print("[x0, x1] = [%g, %g]" % (x0,x1), file = sys.stderr)
     
     for i in filt_indices:
 
@@ -43,7 +43,7 @@ def com_periodic   ( x, x0, x1, types, masses, filt_indices ):
         
         theta = xx * 2.0 * math.pi
         if xx < 0 or xx > 1:
-            print >> sys.stderr, "theta out of bounds! xx = %g" % xx
+            print("theta out of bounds! xx = %g" % xx, file = sys.stderr)
         
         xk += m*math.cos( theta )
         zk += m*math.sin( theta )
@@ -58,7 +58,7 @@ def com_periodic   ( x, x0, x1, types, masses, filt_indices ):
 
     # Check to make sure it's in bounds:
     if xavg < x0 or xavg > x1:
-        print >> sys.stderr, "<x> is out of bounds!"
+        print("<x> is out of bounds!", file = sys.stderr)
     
     return xavg
 
@@ -122,4 +122,24 @@ def compute_com( b, masses, filt_indices = None ):
 
     return np.array( [x_com, y_com, z_com] )
 
+"""
+  Computes the centre of mass for groups of atoms in the block_data b.
+
+  @param b         Block data
+  @param masses    Masses per atom type (indexed by type - 1)
+  @param groups    Indicates which atoms should be grouped together.
+  @param dims      Number of dimensions of the system (2 or 3)
+"""    
+def compute_com_cpp( b, masses, groups, dims ):
+    com = np.zeros( [groups.size + 1, dims], dtype = float )
     
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+    lammpstools.center_of_mass( void_ptr(b.x), c_longlong(b.meta.N),
+                                void_ptr(b.ids), void_ptr(b.types),
+                                c_longlong(groups.size), void_ptr(groups),
+                                void_ptr(masses), void_ptr(b.meta.domain.xlo),
+                                void_ptr(b.meta.domain.xhi),
+                                c_longlong(b.meta.domain.periodic),
+                                c_longlong(dims), void_ptr( com ) )
+    
+    return com
