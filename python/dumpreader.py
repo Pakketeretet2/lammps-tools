@@ -371,6 +371,7 @@ class dumpreader:
             x[i][1]  = float( words[ lookup_core[3] ] )
             x[i][2]  = float( words[ lookup_core[4] ] )
 
+            if self.molecules:
                 if not self.quiet:
                     print("mol[", i, "] = ", mol[i])
             if self.scaled_x:
