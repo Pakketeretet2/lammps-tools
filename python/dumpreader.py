@@ -165,7 +165,7 @@ def read_raw_pts(fname):
 
 class dumpreader:
     def __init__(self,fname,quiet = True, id_tag = 'id', type_tag = 'type',
-                 x_tag = 'x', y_tag = 'y', z_tag = 'z'):
+                 x_tag = 'x', y_tag = 'y', z_tag = 'z', mol_tag = 'mol'):
         """! Initializes dumpreader with given dump file.
 
         @param fname Name of dump file to read.
@@ -186,6 +186,9 @@ class dumpreader:
         self.scaled_x     = False
         self.scaled_y     = False
         self.scaled_z     = False
+
+        self.molecules    = False
+        self.mol_tag      = mol_tag
 
         if x_tag == 'xs': self.scaled_x = True
         if y_tag == 'ys': self.scaled_y = True
@@ -299,6 +302,7 @@ class dumpreader:
         # Find the right columns
         words = line.split(' ')
         i_idx = t_idx = x_idx = y_idx = z_idx = -1
+        mol_idx         = -1
         other_col_idx   = []
         other_col_heads = []
         if not self.quiet:
@@ -320,6 +324,10 @@ class dumpreader:
                 y_idx = i - 2
             elif w == self.z_tag:
                 z_idx = i - 2
+            elif w == self.mol_tag:
+                mol_idx = i - 2
+                self.molecules = True
+
             elif( i >= 2 ):
                 other_col_heads.append(w)
                 other_col_idx.append(i-2)
@@ -334,6 +342,9 @@ class dumpreader:
         ids        = np.zeros( meta.N, dtype = int )
         types      = np.zeros( meta.N, dtype = int )
         n_other_cols = len(other_col_heads)
+
+        if self.molecules:
+            mol = np.zeros( meta.N, dtype = int )
 
 
         #if n_other_cols > 0:
@@ -357,6 +368,8 @@ class dumpreader:
         lookup_core[3] = y_idx
         lookup_core[4] = z_idx
 
+        lookup_mol     = mol_idx
+
 
         for jj, o_idx in zip(range(0,n_other_cols),other_col_idx):
             lookup_other[jj] = o_idx
@@ -372,6 +385,7 @@ class dumpreader:
             x[i][2]  = float( words[ lookup_core[4] ] )
 
             if self.molecules:
+                mol[i] = int( words[ lookup_mol ] )
                 if not self.quiet:
                     print("mol[", i, "] = ", mol[i])
             if self.scaled_x:
@@ -390,7 +404,10 @@ class dumpreader:
                 other_cols[jj][i] = float( words[ lookup_other[jj] ] )
 
         # All done, I think.
-        b = block_data( meta, ids, types, x )
+        if self.molecules:
+            b = block_data( meta, ids, types, x, mol = mol )
+        else:
+            b = block_data( meta, ids, types, x )
         for jj in range(0, n_other_cols):
             occ = dump_col( other_col_heads[jj], other_cols[jj] )
             b = append_col(b, occ)
