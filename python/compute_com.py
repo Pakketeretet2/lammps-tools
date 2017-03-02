@@ -82,45 +82,14 @@ def com_nonperiodic( x, types, masses, filt_indices ):
   Computes the centre of mass of the block_data b.
   Can be filtered by passing a container with the indices to calculate the com of.
 
-  @param b             Block data
-  @param masses        Masses per atom type (indexed by type - 1)
-  @param filt_indices  Indices to compute com for (all used if not given)
+  @param b       Block data
+  @param masses  Masses per atom type (indexed by type - 1)
+  @param groups  Indicates which atoms are in same group. Group 0 means ignore.
+  @param dims    Number of dimensions of the system (2 or 3)
 """
-def compute_com( b, masses, filt_indices = None ):
-    if filt_indices == None:
-        filt_indices = range(0, b.meta.N)
+def compute_com( b, masses, groups, dims  ):
+    return compute_com_cpp( b, masses, groups, dims )
 
-    x_com = y_com = z_com = 0.0
-
-    x = b.x[:,0]
-    y = b.x[:,1]
-    z = b.x[:,2]
-
-    types  = b.types
-    x0 = b.meta.domain.xlo[0]
-    x1 = b.meta.domain.xhi[0]
-    y0 = b.meta.domain.xlo[1]
-    y1 = b.meta.domain.xhi[1]
-    z0 = b.meta.domain.xlo[2]
-    z1 = b.meta.domain.xhi[2]
-    
-    
-    if b.meta.domain.periodic & 1:
-        x_com = com_periodic( x, x0, x1, types, masses, filt_indices );
-    else:
-        x_com = com_nonperiodic( x, types, masses, filt_indices );
-    
-    if b.meta.domain.periodic & 2:
-        y_com = com_periodic( y, y0, y1, types, masses, filt_indices );
-    else:
-        y_com = com_nonperiodic( y, types, masses, filt_indices );        
-
-    if b.meta.domain.periodic & 4:
-        z_com = com_periodic( z, z0, z1, types, masses, filt_indices );
-    else:
-        z_com = com_nonperiodic( z, types, masses, filt_indices );
-
-    return np.array( [x_com, y_com, z_com] )
 
 """
   Computes the centre of mass for groups of atoms in the block_data b.
