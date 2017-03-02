@@ -56,16 +56,7 @@ void com_periodic( const arr3f &x,  const arr1i &ids, const arr1i &types,
 		
 		theta_avg += math_const::pi;
 		com[i][dim] = theta_avg * Lx / two_pi + xlo;
-		
-		if( i == 1 && dim == 0 ){
-			std::cerr << "<x> = " << com[i][dim] << ".\n";
-		}
-		if( i == 1 && dim == 1 ){
-			std::cerr << "<y> = " << com[i][dim] << ".\n";
-		}
-		if( i == 1 && dim == 2 ){
-			std::cerr << "<z> = " << com[i][dim] << ".\n";
-		}
+
 	}
 }
 
@@ -102,15 +93,6 @@ void com_nonperiodic( const arr3f &x,  const arr1i &ids, const arr1i &types,
 	for( int i = 1; i <= Ngroups; ++i ){
 		x_avg[i]   /= M[i];
 		com[i][dim] = x_avg[i];
-		if( i == 1 && dim == 0 ){
-			std::cerr << "<x> = " << x_avg[i] << ".\n";
-		}
-		if( i == 1 && dim == 1 ){
-			std::cerr << "<y> = " << x_avg[i] << ".\n";
-		}
-		if( i == 1 && dim == 2 ){
-			std::cerr << "<z> = " << x_avg[i] << ".\n";
-		}
 	}
 }
 
