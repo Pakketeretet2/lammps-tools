@@ -62,6 +62,7 @@ def append_col(block, col):
     block.other_cols.append(col)
     return block
 
+
 def read_data(fname):
     """! Reads a data file, converts it to block_data and returns that. """
     with open(fname) as fin:
