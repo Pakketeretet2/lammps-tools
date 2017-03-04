@@ -13,9 +13,10 @@ This package defines the python interface to the C++ lib and some
 from ctypes import *
 import numpy as np
 from typecasts import *
-from dumpreader import *
 from potentials import *
 from makepairtable import *
+from block_data import *
+
 import struct              # For nice unpacking of binary data
 import time
 import math
