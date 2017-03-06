@@ -7,6 +7,7 @@ dump_reader_lammps::dump_reader_lammps( const std::string &fname )
 
 dump_reader_lammps::dump_reader_lammps( std::istream &in )
 {
+	
 }
 		
 dump_reader_lammps::~dump_reader_lammps()

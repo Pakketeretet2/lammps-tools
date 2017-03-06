@@ -4,7 +4,6 @@
 #include "util.h"
 #include "block_data.h"
 
-
 #include <string>
 #include <vector>
 #include <fstream>
@@ -64,8 +63,5 @@ bool get_dump_line( std::string &line, std::istream &in );
 bool next_block_from_istream( block_data &b, std::istream &in );
 bool last_block_from_istream( block_data &block, std::istream &in );
 bool skip_block_from_istream( std::istream &in );
-
-
-
 
 #endif // DUMP_READER_H
