@@ -1,6 +1,7 @@
 #include "block_data_writers.h"
 
 
+
 void write_block_lammps_dump( const block_data &b, std::ostream &o )
 {
 	std::string header_line = "ITEM: ATOMS id type x y z";
@@ -39,4 +40,14 @@ void write_block_lammps_dump( const block_data &b, std::ostream &o )
 		}
 		o << "\n";
 	}
+}
+
+void write_block_hoomd_gsd( const block_data &b, const std::string &fname )
+{
+	
+}
+
+void write_block_hoomd_gsd( const block_data &b, gsd_handle *h )
+{
+	
 }
