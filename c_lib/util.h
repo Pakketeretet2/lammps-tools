@@ -19,7 +19,7 @@ inline bool ends_with( const std::string &s, const std::string &end )
 	if( end.length() > s.length() ){
 		return false;
 	}else{
-		return s.compare(s.length() - end.length() - 1, s.length()-1, end ) == 0;
+		return s.compare(s.length() - end.length(), s.length(), end ) == 0;
 	}
 }
 

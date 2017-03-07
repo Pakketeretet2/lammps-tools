@@ -4,8 +4,10 @@
 #include "types.h"
 #include "dump_reader.h"
 
-#include <list>
 
+#include <list>
+#include <array>
+#include <vector>
 
 
 py_float rmsd_fluctuations_impl( dump_reader &r, std::vector<std::array<double,4> > &rmsd_flucts,

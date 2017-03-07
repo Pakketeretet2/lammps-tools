@@ -27,6 +27,7 @@ typedef uint64_t      py_uint;   ///< uint as passed from Python
 typedef uint64_t      biguint;   ///< unsigned long of guaranteed size (64 bits)
 typedef double        py_float;  ///< float as passed from python
 typedef unsigned int  uint;      ///< "small" unsigned int
+typedef wchar_t       py_char;   ///< widechar type to deal with Python strings
 
 
 /*!

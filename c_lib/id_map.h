@@ -23,6 +23,8 @@ public:
 	id_map( ) {}
 	/// Constructor based on given atom ids
 	id_map( const arr1i &ids );
+	id_map( py_int *ids, py_int N );
+	
 	template <typename int_type>
 	id_map( const std::vector<int_type> &ids )
 	{

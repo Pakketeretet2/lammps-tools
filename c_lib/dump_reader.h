@@ -4,28 +4,58 @@
 #include "util.h"
 #include "block_data.h"
 
-#include <string>
-#include <vector>
-#include <fstream>
-#include <array>
+#include <iosfwd>
 
-#define HAVE_BOOST_GZIP
-#ifdef HAVE_BOOST_GZIP
-#  include <boost/iostreams/filter/zlib.hpp>
-#  include <boost/iostreams/filtering_stream.hpp>
-#endif
+class reader_core
+{
+public:
+	reader_core(){}
+	virtual ~reader_core(){}
+	
+	virtual bool getline( std::string &line );
+	virtual void rewind();
+};
+
+
+class dump_interpreter
+{
+public:
+	dump_interpreter(){}
+	virtual ~dump_interpreter(){}
+	
+	virtual bool next_block( reader_core *r, block_data &block );
+	virtual bool last_block( reader_core *r, block_data &block );
+};
 
 
 class dump_reader
 {
 public:
-	dump_reader( const std::string &fname );
+	enum FILE_FORMATS {
+		PLAIN   = 0,
+		GZIP    = 1,
+		ISTREAM = 2
+	};
 	
+	enum DUMP_FORMATS {
+		LAMMPS  = 0,
+		GSD     = 1
+	};
+
+	dump_reader( std::istream &stream, int dump_format );
+	dump_reader( const std::string &fname, int dump_format = LAMMPS,
+	             int file_format = PLAIN );
+
+	void setup_reader( std::istream &stream );
+	void setup_reader( const std::string &fname, int format );
+
+	void setup_interpreter( int dump_format );
 	
-	virtual ~dump_reader();
 
 	virtual bool next_block( block_data &block );
 	virtual bool last_block( block_data &block );
+	
+	virtual ~dump_reader();
 
 	operator bool() const
 	{
@@ -36,32 +66,49 @@ public:
 	bool skip_block ( );
 
 	std::size_t block_count();
-	void rewind();
 	
 private:
-	enum FILE_FORMATS {
-		PLAIN   = 0,
-		GZIP    = 1,
-		ISTREAM = 2
-	};
 
-	bool getline( std::string &line, int mode = 0 );
-	void init_infile( const std::string &fname );
-
-	bool at_eof;	
+	bool at_eof;
 	int file_format;
+	int dump_format;
 
-	std::string infile_name;
-	std::ifstream infile;
-	// For the gzip case:
-#ifdef HAVE_BOOST_GZIP
-	boost::iostreams::filtering_istream infile_filt;
-#endif
+	reader_core      *reader;
+	dump_interpreter *interp;
 };
 
-bool get_dump_line( std::string &line, std::istream &in );
-bool next_block_from_istream( block_data &b, std::istream &in );
-bool last_block_from_istream( block_data &block, std::istream &in );
-bool skip_block_from_istream( std::istream &in );
+
+
+// Use this to interface with the C++ dump reader.
+extern "C" {
+
+struct dump_reader_handle {
+	dump_reader *reader;
+	block_data  *last_block;
+};
+	
+dump_reader_handle *get_dump_reader_handle( const char *dname );
+void release_dump_reader_handle( dump_reader_handle *dh );
+bool dump_reader_next_block( dump_reader_handle *dh );
+void dump_reader_get_block_meta( dump_reader_handle *dh,
+                                 py_int *tstep, py_int *N,
+                                 py_float *xlo, py_float *xhi,
+                                 py_int *periodic, char *boxline,
+                                 py_int *atom_style );
+void dump_reader_get_block_data( dump_reader_handle *dh,
+                                 py_int N, py_float *x, py_int *ids,
+                                 py_int *types, py_int *mol );
+
+
+// TODO: Think of a way to copy the data from the C++ side to Python...
+//       Maybe through a pipe? It's lame but works.
+	
+
+} // extern "C"
+
+
+
+
+
 
 #endif // DUMP_READER_H

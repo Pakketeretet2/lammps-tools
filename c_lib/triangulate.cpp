@@ -184,14 +184,14 @@ void triangulate_block( block_data &b, py_float rc, py_int periodic,
 	// Make a neighbour list first:
 	std::size_t N = b.N;
 	
-	arr1i iids(b.ids.data() ,N);
-	arr1i ttypes(b.types.data() ,N);
-	arr3f xx(b.x.data(), N);
+	arr1i iids(b.ids ,N);
+	arr1i ttypes(b.types ,N);
+	arr3f xx(b.x, N);
 	list *neighs = new list[N];
 	
 	neighborize_impl( xx, N, iids, ttypes, rc, periodic,
 	                  b.xlo, b.xhi, dims, method, neighs, 0, 0 );
-	std::vector<py_int> v_ids( b.ids.data(), b.ids.data() + N );
+	std::vector<py_int> v_ids( b.ids, b.ids + N );
 	py_int max_id = *std::max_element( v_ids.begin(), v_ids.end() );
 	std::vector<py_int> id_map( max_id + 1 );
 	

@@ -46,7 +46,7 @@ py_float get_line_tension( void *x, py_int N, py_int *ids,
                            py_int nn_expect, py_float F_per_particle )
 {
 	block_data b;
-	block_data_from_foreign( x, N, ids, types, periodic, xlo, xhi, dims,
+	block_data_from_foreign( x, N, ids, types, nullptr, periodic, xlo, xhi, dims,
 	                         tstep, boxline, b );
 	std::vector<std::list<py_int> > neighs;
 	neighborize_block( b, neighs );

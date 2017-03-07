@@ -7,6 +7,13 @@ id_map::id_map( const arr1i &ids )
 	}
 }
 
+id_map::id_map( py_int *ids, py_int N )
+{
+	for( uint i = 0; i < N; ++i ){
+		m[ids[i]] = i;
+	}
+}
+
 py_int id_map::operator[]( py_int id ) const
 {
 	std::map<py_int,py_int>::const_iterator i = m.find(id);

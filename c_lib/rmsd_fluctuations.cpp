@@ -21,12 +21,16 @@ py_float rmsd_fluctuations_impl( dump_reader &r, std::vector<std::array<double,4
 
 	// Sort by ids:
 	std::vector<std::array<double, 3> > x_avg( block.N );
-	id_map im0( block.ids ); // This gives you the indices at time step 0.
+	id_map im0( block.ids, block.N ); // This gives you the indices at time step 0.
 	
 	std::vector<std::array<double, 3> > x_sor( block.N );
 	double alpha = 0.95;
 
-	x_avg = block.x;
+	for( int i = 0; i < block.N; ++i ){
+		x_avg[i][0] = block.x[i][0];
+		x_avg[i][1] = block.x[i][1];
+		x_avg[i][2] = block.x[i][2];
+	}
 
 	do {
 		std::cerr << "Block has " << block.N << " atoms, t = "
@@ -43,7 +47,11 @@ py_float rmsd_fluctuations_impl( dump_reader &r, std::vector<std::array<double,4
 			int id  = block.ids[i];
 			int idx = im0.id_to_index( id );
 
-			x_sor[idx] = block.x[i];
+			
+			x_sor[idx][0] = block.x[i][0];
+			x_sor[idx][1] = block.x[i][1];
+			x_sor[idx][2] = block.x[i][2];
+			
 		}
 
 		// Now perform the moving average:
@@ -88,12 +96,12 @@ py_float rmsd_fluctuations_impl( dump_reader &r, std::vector<std::array<double,4
 py_float get_msd( const block_data &b1, const block_data &b0, py_float *msd )
 {
 	double tmsd = 0.0;
-	id_map im1( b1.ids );
+	id_map im1( b1.ids, b1.N );
 	
 	for( int i = 0; i < b0.N; ++i ){
 		long int id0 = b0.ids[i];
-		const std::array<double,3> &x0 = b0.x[i];
-		const std::array<double,3> &x1 = b1.x[ im1[id0] ];
+		const double* x0 = b0.x[i];
+		const double *x1 = b1.x[ im1[id0] ];
 
 		double dx = x0[0] - x1[0];
 		double dy = x0[1] - x1[1];

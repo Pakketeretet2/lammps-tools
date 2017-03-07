@@ -9,6 +9,13 @@
 
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include "reader_core_plain.h"
+#include "reader_core_gzip.h"
+
+#include "dump_interpreter_lammps.h"
+
+
+
 struct dummy_stream
 {
 	template <typename T>
@@ -40,168 +47,301 @@ struct debug_stream
 	std::ostream &o;
 };
 
-// static dummy_stream d_out;
-//static std::ofstream d_out( "/dev/stderr" );
-static debug_stream d_out( std::cerr );
 
 
-
-dump_reader::dump_reader( const std::string &fname ) : at_eof(false),
-                                                       infile_name(fname)
+bool reader_core::getline( std::string &line )
 {
-	init_infile(fname);
+	std::cerr << "Do not use reader_core::getline. Use a derived class!\n";
+	std::terminate();
+	return false;
 }
 
+void reader_core::rewind()
+{
+	std::cerr << "Do not use reader_core::rewind. Use a derived class!\n";
+	std::terminate();
+}
+
+
+bool dump_interpreter::next_block( reader_core *r, block_data &block )
+{
+	std::cerr << "Do not use dump_interpreter::next_block. "
+	          << "Use a derived class!\n";
+	std::terminate();
+	return false;
+}
+
+
+bool dump_interpreter::last_block( reader_core *r, block_data &block )
+{
+	block_data last_block;
+	bool success = next_block( r, block );
+	if( success ){
+		do{
+			copy( last_block, block );
+		}while( next_block( r, block ) );
+		return success;
+	}else{
+		return false;
+	}
+}
+
+
+
+
+// ***************** DUMPREADER STUFF ********************
+dump_reader::dump_reader( std::istream &stream, int dformat )
+{
+	file_format = ISTREAM;
+	dump_format = dformat;
+	setup_interpreter( dump_format );
+	
+	setup_reader( stream );
+}
+
+dump_reader::dump_reader( const std::string &fname, int dformat,
+                          int file_format )
+{
+	file_format = PLAIN;
+	dump_format = dump_format;
+	
+	if( ends_with( fname, ".gz" ) ){
+		file_format = GZIP;
+	}
+	
+	if( ends_with( fname, ".gsd" ) ){
+		dump_format = GSD;
+	}else if( ends_with( fname, ".dump" ) ){
+		dump_format = LAMMPS;
+	}else if( ends_with( fname, ".dump.gz" ) ){
+		dump_format = LAMMPS;
+	}else{
+		std::cerr << "Extension of dump file " << fname
+		          << " not recognized! If you are certain of the "
+		          << "format, explicitly state the dump format!\n";
+		std::terminate();
+	}
+
+	setup_interpreter( dformat );
+	setup_reader( fname, file_format );
+	
+}
 
 
 dump_reader::~dump_reader()
 {
-	
+	if( reader ) delete reader;
+	if( interp ) delete interp;
 }
 
-// Skips the next Nblocks blocks.
-bool dump_reader::skip_blocks( int Nblocks )
+
+void dump_reader::setup_reader( std::istream &stream )
 {
-	for( int i = 0; i < Nblocks; ++i ){
-		bool success = skip_block();
-		if( !success ){
-			d_out << "Block skip failed, returning...\n";
-			return false;
-		}
+	reader = new reader_core_plain( stream );
+	if( !reader ){
+		std::cerr << "Failure setting up reader!\n";
+		std::terminate();
 	}
-	return true;
 }
 
-bool dump_reader::skip_block()
+void dump_reader::setup_reader( const std::string &fname, int format )
 {
-	switch( file_format ){
-#ifdef HAVE_BOOST_GZIP
-		case GZIP:
-			return skip_block_from_istream( infile_filt );
-#endif
-		case PLAIN:
-		default:
-			return skip_block_from_istream( infile );
-	}	
+	if( format == GZIP ){
+		reader = new reader_core_gzip( fname );
+	}else if( format == PLAIN ){
+		reader = new reader_core_plain( fname );
+	}else{
+		std::cerr << "File format for reader not recognized!\n";
+		std::terminate();
+	}
+
 	
-	return true;
+	if( !reader ){
+		std::cerr << "Failure setting up reader!\n";
+		std::terminate();
+	}	
 }
+
+void dump_reader::setup_interpreter( int dump_format )
+{
+	if( dump_format == LAMMPS ){
+		interp = new dump_interpreter_lammps();
+	}else if( dump_format == GSD ){
+		// interp = new dump_interpreter_gsd();
+	}else{
+		std::cerr << "Unrecognized dump format!\n";
+		std::terminate();
+	}
+}
+
 
 
 
 bool dump_reader::next_block( block_data &block )
 {
-	if( at_eof ) return false;
-
-	switch( file_format ){
-#ifdef HAVE_BOOST_GZIP
-		case GZIP:
-			return next_block_from_istream( block, infile_filt );
-#endif
-		case PLAIN:
-		default:
-			return next_block_from_istream( block, infile );
-	}
+	return interp->next_block( reader, block );
 }
 
 bool dump_reader::last_block( block_data &block )
 {
-	if( at_eof ) return false;
-
-
-	switch( file_format ){
-#ifdef HAVE_BOOST_GZIP
-		case GZIP:
-			return last_block_from_istream( block, infile_filt );
-#endif
-		case PLAIN:
-		default:
-			return last_block_from_istream( block, infile );
-	}
-}
-
-
-
-void dump_reader::init_infile( const std::string &fname )
-{
-	if( ends_with( fname, ".gz" ) ){
-#ifdef HAVE_BOOST_GZIP
-		infile = std::ifstream( fname, std::ios_base::in | std::ios_base::binary );
-		file_format = GZIP;
-		infile_filt.push(boost::iostreams::gzip_decompressor());
-		infile_filt.push(infile);
-#else
-		assert(false && "BOOST GZIP LIBRARY NOT INSTALLED!");
-#endif
-	}else{
-		file_format = PLAIN;
-		infile = std::ifstream( fname, std::ios_base::in );
-	}
-
+	bool success = interp->next_block( reader, block );
+	if( !success ) return false;
 	
+	while( success ){
+		success = interp->next_block( reader, block );
+	}
+	return true;
 }
 
-bool dump_reader::getline( std::string &line, int mode )
+
+
+bool dump_reader::skip_blocks( int Nblocks )
 {
-	if( mode == 1 ){
-		std::getline( std::cin, line );
-		return false; // stuff;
+	bool success = false;
+	for( int i = 0; i < Nblocks; ++i ){
+		block_data b;
+		success = next_block( b );
+		if( !success ){
+			return success;
+		}
 	}
-		
-	switch( file_format ){
-#ifdef HAVE_BOOST_GZIP
-		case GZIP:
-			if( std::getline( infile_filt, line ) ){
-				return true;
-			}else{
-				return false;
-			}
-			break;
-#endif
-		case PLAIN:
-		default:
-			if( std::getline( infile, line ) ){
-				return true;
-			}else{
-				return false;
-			}
-			break;
-	}
+	return success;
 }
 
+bool dump_reader::skip_block ( )
+{
+	block_data b;
+	return next_block( b );
+}
 
 
 
 std::size_t dump_reader::block_count()
 {
-	std::size_t n_blocks = 0;
-	block_data b;
-	while( next_block(b) ){
-		n_blocks++;
-		if( n_blocks % 100 == 0 ){
-			std::cerr << "At block " << n_blocks << "...\n";
+	std::size_t i = 0;
+	bool success = false;
+	while( true ){
+		block_data b;
+		success = next_block( b );
+		if( success ){
+			++i;
+		}else{
+			return i;
 		}
 	}
-	
-	at_eof = false;
-	rewind();
-	
-	return n_blocks;
 }
 
 
+// **************** For interfacing with foreign languages *********************
+extern "C" {
 
-void dump_reader::rewind()
+dump_reader_handle *get_dump_reader_handle( const char *dname )
 {
-	if( infile ){
-		infile.close();
-	}
-#ifdef HAVE_BOOST_GZIP
-	if( infile_filt ){
-		infile_filt.clear();
-	}
-#endif // HAVE_BOOST_GZIP
+	std::cerr << "dname = " << dname << "\n";
+	dump_reader_handle *dh = new dump_reader_handle;
+	dh->last_block = nullptr;
+	dh->reader     = nullptr;
+	std::string name( dname );
 	
-	init_infile( infile_name );
+	dh->reader = new dump_reader( name );
+	dh->last_block = new block_data;
+	
+	return dh;
 }
 
+void release_dump_reader_handle( dump_reader_handle *dh )
+{
+	if( dh ){
+		if( dh->reader ) delete dh->reader;
+		delete dh;
+	}
+}
+
+bool dump_reader_next_block( dump_reader_handle *dh )
+{
+	block_data block;
+	bool status = dh->reader->next_block( block );
+	if( !status ){
+		std::cerr << "Failed to get next block";
+		return false;
+	}
+	std::cerr << "Got next block of " << block.N
+	          << " particles at time " << block.tstep << ".\n";
+	copy( *(dh->last_block), block );
+	return true;
+}
+
+void dump_reader_get_block_meta( dump_reader_handle *dh,
+                                 py_int *tstep, py_int *N,
+                                 py_float *xlo, py_float *xhi,
+                                 py_int *periodic, char *boxline,
+                                 py_int *atom_style )
+{
+	block_data *lb = dh->last_block;
+	*tstep = lb->tstep;
+	*N     = lb->N;
+	
+	xlo[0] = lb->xlo[0];
+	xlo[1] = lb->xlo[1];
+	xlo[2] = lb->xlo[2];
+
+	xhi[0] = lb->xlo[0];
+	xhi[1] = lb->xhi[1];
+	xhi[2] = lb->xhi[2];
+
+	*periodic   = lb->periodic;
+	*atom_style = lb->atom_style;
+	if( boxline ){
+		std::cerr << "Before writing, external boxline is ";
+		for( int i = 0; i < lb->boxline.size(); ++i ){
+			std::cerr << static_cast<char>(boxline[i]);
+		}
+		std::cerr << "\n";
+		for( int i = 0; i < lb->boxline.size(); ++i ){
+			boxline[i] = static_cast<char>( lb->boxline[i] );
+		}
+		// boxline[lb->boxline.size()] = '\0';
+		std::cerr << "Internal boxline is ";
+		for( int i = 0; i < lb->boxline.size(); ++i ){
+			std::cerr << lb->boxline[i];
+		}
+		std::cerr << "\n";
+		std::cerr << "After writing, external boxline is ";
+		for( int i = 0; i < lb->boxline.size(); ++i ){
+			std::cerr << static_cast<char>(boxline[i]);
+		}
+		std::cerr << "\n";
+	}
+}
+	
+void dump_reader_get_block_data( dump_reader_handle *dh,
+                                 py_int N, py_float *x, py_int *ids,
+                                 py_int *types, py_int *mol )
+{
+	std::cerr << "Writing " << N << " particles.\n";
+	if( !x || !ids || !types ){
+		std::cerr << "One of the essential arrays not "
+		          << "allocated properly.\n";
+	}
+
+	for( py_int i = 0; i < N; ++i ){
+		x[3*i + 0] = dh->last_block->x[i][0];
+		x[3*i + 1] = dh->last_block->x[i][1];
+		x[3*i + 2] = dh->last_block->x[i][2];
+
+		ids[i] = dh->last_block->ids[i];
+		types[i] = dh->last_block->types[i];
+	}
+	if( mol ){
+		if( !dh->last_block->mol ){
+			std::cerr << "WARNING: Mol requested but not contained "
+			          << "by dump! Ignoring...\n";
+		}else{
+			for( int i = 0; i < N; ++i ){
+				mol[i] = dh->last_block->mol[i];
+			}
+		}
+	}
+}
+
+} // extern "C"

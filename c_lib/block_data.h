@@ -10,47 +10,64 @@
 
 
 extern "C"{
+
+struct dump_col
+{
+	std::string header;
+	std::vector<double> data;
+
+	void resize( py_int M )
+	{
+		data.resize( M );
+	}
 	
+};
+
+
 struct block_data
 {
+	enum atom_styles {
+		ATOMIC,
+		MOLECULAR
+	};
+	
 	py_float **x;
 	py_float *x_;
 	py_int *ids, *types;
 	py_int *mol;
 	py_int N, tstep;
 
-	double xlo[3], xhi[3];
+	py_float xlo[3], xhi[3];
 	py_int periodic;
-	std::string boxline;
 
-	enum atom_styles {
-		ATOMIC,
-		MOLECULAR
-	};
 	py_int atom_style;
+
+	std::string boxline;
+	std::vector<dump_col> other_cols;
+	
+
+	block_data();
+	block_data( int N );
+	~block_data();
+	
+	void resize( int N );
+	void init( int N );
+	
+private:
+	void delete_members();
 };
 
 
-block_data *new_block_data();
-void        delete_block_data(block_data*);
-
-
+void copy( block_data &b, const block_data &source );
+	
 }
 
-void resize( block_data &b, int N );
-void init( block_data &b, int N );
 
-
-block_data filter_block( block_data b, const std::list<long int> &ids );
-block_data filter_block( block_data b, const std::vector<long int> &ids );
-
-block_data filter_block_by_indices( block_data b, const std::vector<long int> &indices );
-block_data filter_block_by_indices( block_data b, const std::list<long int> &indices );
-
-void block_data_from_foreign( void *x, py_int N, py_int *ids,
-                              py_int *types, py_int periodic,
-                              py_float *xlo, py_float *xhi, py_int dims,
-                              py_int tstep, const char *box_line,
+void block_data_from_foreign( const void *x, py_int N, const py_int *ids,
+                              const py_int *types, const py_int *mol,
+                              py_int periodic,
+                              const py_float *xlo, const py_float *xhi,
+                              py_int dims, py_int tstep, const char *box_line,
                               block_data &b );
 
 block_data block_data_from_data_file( const char *fname, int &status );
@@ -63,54 +80,57 @@ void print_block_data_lmp( const block_data &b, const std::string &s,
                            std::ios_base::openmode mode );
 
 
-/*
-class block_data
+template <typename container>
+block_data filter_block( block_data b, const container &ids )
 {
-public:
-	block_data();
-	~block_data();
-
-	block_data &operator=( const block_data &b );
-
-	int alloc( int size );
-	void clear();
-	double memory();
-
-	void init_empty( int size );
-	void copy_meta( const block_data &b );
-
-	void set_xyz_tags( const char *tx, const char *ty, const char *tz );
-	void set_id_tag( const char *tid );
-	void set_type_tag( const char *ttype );
-
-	std::vector<std::array<double,3> > x;
-	std::vector<long int> ids, types;
-
-	std::string boxline;
-	double xlo[3], xhi[3];
-	int N;
-	int tstep;
-
-	std::vector<std::vector<double> > other_cols;
-	std::vector<std::string> other_col_headers;
-
-	int N_other_cols;
-	int columns[5]; // Lists the index of id, type, x, y, z column, resp.
-	std::vector<int> ocols;
-	std::string idt, typet, xt, yt, zt;
-
+	block_data b_filter;
+	py_int M = 0;
+	copy( b_filter, b );
 	
-	void print( std::ostream &out, std::ostream &err = std::cerr );
-	void print( const std::string &out_name, std::ostream &err = std::cerr );
-	void print_data( std::ostream &out, std::ostream &err = std::cerr );
 
-	void set_column_indices( const std::string &line );		
-	void word_to_array( const std::string &w, int idx, int i );
-	int  get_column_index( const std::string &header );
+	for( int i = 0; i < b.N; ++i ){
+		auto idx = std::find( ids.begin(), ids.end(), b.ids[i] );
+		if( idx != ids.end() ){
+			b_filter.x[M][0] = b.x[i][0];
+			b_filter.x[M][1] = b.x[i][1];
+			b_filter.x[M][2] = b.x[i][2];
+
+			b_filter.ids[M]  = b.ids[i];
+			b_filter.types[M]  = b.types[i];
+			if( b.mol ){
+				b_filter.mol[M]  = b.mol[i];
+			}
+			++M;
+		}
+	}
+	b_filter.resize( M );
+	return b_filter;
+}
+
+template <typename container>
+block_data filter_block_by_indices( block_data b, const container &indices )
+{
+	block_data b_filter;
+	py_int M = 0;
+	copy( b_filter, b );
 	
-	void append_other_col( std::string header, std::vector<double> data );
-};
-*/
+
+	for( py_int i : indices ){
+		b_filter.x[M][0] = b.x[i][0];
+		b_filter.x[M][1] = b.x[i][1];
+		b_filter.x[M][2] = b.x[i][2];
+
+		b_filter.ids[M]  = b.ids[i];
+		b_filter.types[M]  = b.types[i];
+		if( b.mol ){
+			b_filter.mol[M]  = b.mol[i];
+		}
+		++M;
+	}
+	b_filter.resize( M );
+	return b_filter;
+}
+
 
 
 #endif // BLOCK_DATA_H

@@ -36,6 +36,16 @@ double sphere_dist( const std::array<double,3> &xi, const std::array<double,3> &
 	
 }
 
+double sphere_dist( const double *xi, const double *xj, double R )
+{
+	double R2 = R * R;
+	double dot = xi[0]*xj[0] + xi[1]*xj[1] + xi[2]*xj[2];
+	double theta = std::acos( dot / R2 );
+	return theta*R;
+	
+}
+
+
 std::vector<double> get_insideness( const block_data &b,
                                     std::vector<std::list<py_int> > *neigh_ptr )
 {
@@ -65,7 +75,7 @@ std::vector<double> get_insideness( const block_data &b,
 	// Stategy: Recursively loop over all points in network. Those that
 	// are not yet determined to be anywhere are assigned the lowest value
 	// of their neighbouring insideness plus one.
-	id_map im( b.ids );	
+	id_map im( b.ids, b.N );	
 	bool assigned_one = false;
 	double current_val = 0.0;
 	// std::cerr << "Finding insideness. At loop 0...";
@@ -111,18 +121,19 @@ std::vector<double> euclidian_distance_transform( const class block_data &b,
 	get_edge( b, insideness, b_edge );
 	
 	// Generate a separate list that contains only the edge.	
-	
-	b_edge.print( "edge.dump" );
+
+	print_block_data_lmp( b_edge, "edge.dump" );
 	for( int i = 0; i < b.N; ++i ){
 		if( insideness[i] == 0 ){
 			edt[i] = 0.0;
 		}else{
-			const std::array<double,3> &xi = b.x[i];
+			const double *xi = b.x[i];
 			double R2 = R*R;
 			double min_dist = 16*R;
 			
 			// Find the closest edge:
-			for( const std::array<double,3> &xe : b_edge.x ){
+			for( py_int j = 0; j < b_edge.N; ++j ){
+				const double *xe = b_edge.x[i];
 				double dot = xi[0]*xe[0] + xi[1]*xe[1] + xi[2]*xe[2];
 				double theta = std::acos( dot / R2 );
 				min_dist = std::min( min_dist, theta*R );
@@ -222,11 +233,6 @@ void skeletonize_alg2( const block_data &b, std::vector<py_int> &skeleton,
 	           {
 		           return distance_map[a] < distance_map[b];
 	           } );
-	for( std::size_t idx : permutation ){
-		const std::array<double,3> &xi = b.x[idx];
-		
-	}
-	
 }
 
 void skeletonize_cgal( const block_data &b, std::vector<py_int> &skeleton,
@@ -253,8 +259,7 @@ void get_edge( const block_data &b, const std::vector<double> &insideness,
 		if( i == 0 ) ++N_edge;
 	}
 
-	
-	b_edge.init_empty( N_edge );
+	b_edge.resize( N_edge );
 
 	int j = 0;
 	for( int i = 0; i < insideness.size(); ++i ){
@@ -407,8 +412,8 @@ void get_insideness( void *x, py_int N, py_int *ids,
                      py_float *insideness )
 {
 	block_data b;
-	block_data_from_foreign( x, N, ids, types, periodic, xlo, xhi, dims,
-	                         0, "", b );
+	block_data_from_foreign( x, N, ids, types, nullptr, periodic, xlo, xhi,
+	                         dims, 0, "", b );
 	std::vector<double> ins = get_insideness( b );
 	for( py_int i = 0; i < N; ++i ){
 		insideness[i] = ins[i];
@@ -422,8 +427,8 @@ void get_euclidian_distance_transform( void *x, py_int N, py_int *ids,
                                        py_float *edt )
 {
 	block_data b;
-	block_data_from_foreign( x, N, ids, types, periodic, xlo, xhi, dims,
-	                         0, "", b );
+	block_data_from_foreign( x, N, ids, types, nullptr, periodic, xlo, xhi,
+	                         dims, 0, "", b );
 	
 	std::vector<py_float> ins( N );
 	for( std::size_t i = 0; i < N; ++i ){

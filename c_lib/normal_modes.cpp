@@ -21,7 +21,7 @@ void normal_mode_analysis( dump_reader &r,  py_int N, void *eigenvalues,
 	block_data b;
 	
 	while( r.next_block( b ) ){
-		id_map im( b.ids );
+		id_map im( b.ids, b.N );
 		py_int Nparticles = b.N;
 		
 		coord_block block( Nparticles );
