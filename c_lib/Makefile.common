@@ -3,8 +3,7 @@ SHELL = /bin/sh
 CC = g++
 FLAGS = -std=c++11 -g -pedantic -frounding-math -shared -fPIC -g \
 	-Werror=int-conversion -Werror=implicit \
-	-Werror=return-type -Werror=uninitialized -Wall \
-	-lboost_iostreams
+	-Werror=return-type -Werror=uninitialized -Wall
 
 PY_DIR     = "/usr/include/python2.7/"
 LAMMPS_DIR = "/home/stefan/projects/lammps-mine/src/"
@@ -21,7 +20,7 @@ SRC = $(wildcard *.$(EXT))
 # Conditional flags:
 ifeq ($(HAVE_LIB_CGAL), 1)
 	LNK   += -lCGAL -lgmp
-	FLAGS += -DHAVE_LIB_CGAL
+	FLAGS += -DHAVE_LIB_CGAL -frounding-math
 endif
 
 ifeq ($(VERBOSE_LIB), 1)
@@ -50,6 +49,11 @@ endif
 
 ifeq ($(HAVE_LIB_GSD), 1)
 	FLAGS += -DHAVE_GSD
+endif
+
+ifeq ($(HAVE_BOOST_GZIP), 1)
+	FLAGS += -DHAVE_BOOST_GZIP
+	LNK   += -lboost_iostreams
 endif
 
 

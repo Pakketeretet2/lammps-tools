@@ -9,7 +9,8 @@ HAVE_LIB_LAMMPS = 1
 HAVE_LIB_ARMADILLO = 1
 # For ICP:
 HAVE_LIB_ICP = 1
-
+# For GZIP
+HAVE_BOOST_GZIP = 1
 
 include Makefile.common
 
