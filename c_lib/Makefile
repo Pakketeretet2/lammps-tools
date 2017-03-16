@@ -1,6 +1,6 @@
 # First set some options:
 # For delaunay triangulations:
-HAVE_LIB_CGAL = 1
+HAVE_LIB_CGAL = 0
 # For more output:
 VERBOSE_LIB   = 0
 # For stuff that needs a LAMMPS lib:
@@ -12,7 +12,7 @@ HAVE_LIB_ICP = 0
 # For writing/converting gsd format.
 HAVE_LIB_GSD = 0
 # For reading in gzipped dump files.
-HAVE_BOOST_GZIP = 0
+HAVE_BOOST_GZIP = 1
 
 
 include Makefile.common

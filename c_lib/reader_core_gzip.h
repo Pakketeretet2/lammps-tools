@@ -25,7 +25,7 @@ private:
 #ifdef HAVE_BOOST_GZIP
 	boost::iostreams::filtering_istream in;
 #else
-	std::istream in;
+	std::istream &in;
 #endif
 };
 

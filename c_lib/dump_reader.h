@@ -1,6 +1,15 @@
 #ifndef DUMP_READER_H
 #define DUMP_READER_H
 
+/*!
+  @file dump_reader.h
+  @brief An interface for reading various dump files.
+
+  \ingroup cpp_lib
+*/
+
+
+
 #include "util.h"
 #include "block_data.h"
 
@@ -50,9 +59,15 @@ public:
 	void setup_reader( const std::string &fname, int format );
 
 	void setup_interpreter( int dump_format );
-	
 
+	/// Tries to read in the next block from file. If successful,
+	/// returns true and block_data contains the next block.
+	/// Else returns false and block is unchanged.
 	virtual bool next_block( block_data &block );
+
+	/// To return read the last block in the file. If successful,
+	/// returns true and block_data contains the next block.
+	/// Else returns false and block_data is unchanged.
 	virtual bool last_block( block_data &block );
 	
 	virtual ~dump_reader();
@@ -62,10 +77,16 @@ public:
 		return !at_eof;
 	}
 
+	/// Fast-forward a number of blocks.
 	bool skip_blocks( int Nblocks );
+
+	/// Fast-forward one block.
 	bool skip_block ( );
 
+	/// Returns the number of blocks in the file.
 	std::size_t block_count();
+
+	/// Rewinds the file to the beginning.
 	
 private:
 

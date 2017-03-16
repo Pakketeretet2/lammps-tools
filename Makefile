@@ -10,8 +10,7 @@ install :
 
 dox :
 	cd python; doxygen;
-
-	ln -sf ./python/html/index.html manual.html
+	ln -s --force ./python/html/index.html manual.html
 
 clean-dox :
 	rm -rf html
