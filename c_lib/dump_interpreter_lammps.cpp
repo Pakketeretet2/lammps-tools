@@ -63,11 +63,11 @@ bool dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
 			b.other_cols.resize( other_cols.size() );
 			for( int i = 0; i < other_cols.size(); ++i ){
 				b.other_cols[i].header = other_col_headers[i];
-				std::cerr << "Resizing other cols to " << b.N << "\n";
+				// std::cerr << "Resizing other cols to " << b.N << "\n";
 				b.other_cols[i].resize( b.N );
-				std::cerr << b.other_cols[i].header << " was the header.\n";
+				// std::cerr << b.other_cols[i].header << " was the header.\n";
 			}
-			std::cerr << "Grabbing " << b.N << " atoms.\n";
+			// std::cerr << "Grabbing " << b.N << " atoms.\n";
 			for( int i = 0; i < b.N; ++i ){
 				r->getline( line );
 				
@@ -114,14 +114,14 @@ bool dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
 			}
 			// At this point, b contains everything you want.
 			// Copy it to block and return.
-			std::cerr << "Done with reading block.\n";
+			// std::cerr << "Done with reading block.\n";
 			copy( block, b );
 			
 			return true;
 			
 		}else{
-			std::cerr << "Encountered unknown header!\n";
-			std::cerr << line << "\n";
+			// std::cerr << "Encountered unknown header!\n";
+			// std::cerr << line << "\n";
 			return false;
 		}
 	}
@@ -130,14 +130,14 @@ bool dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
 
 void dump_interpreter_lammps::set_headers( const std::string &h_line )
 {
-	std::cerr << "Figuring out atom columns...\n";
-	std::cerr << "Headers: " << h_line << "\n";
+	// std::cerr << "Figuring out atom columns...\n";
+	// std::cerr << "Headers: " << h_line << "\n";
 
 	std::stringstream h( h_line );
 	int header_idx = 0;
 
 	if( !other_col_headers.empty() ){
-		std::cerr << "This is strange...\n";
+		// std::cerr << "This is strange...\n";
 	}
 	
 	do{
@@ -169,18 +169,18 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 			}else{
 				other_col_headers.push_back( hh );
 				other_cols.push_back( header_idx );
-				std::cerr << "Got other col: " << hh
-				          << ", at index " << header_idx << "\n";
+				// std::cerr << "Got other col: " << hh
+				//           << ", at index " << header_idx << "\n";
 			}
 			++header_idx;
 		}
 	}while( h );
 
 	if( id_idx < 0 || type_idx < 0 || x_idx < 0 || y_idx < 0 || z_idx < 0 ){
-		std::cerr << "Column mapping failed!\n";
-		std::cerr << "id mol type x y z = " << id_idx << " " << mol_idx
-		          << " " << type_idx << " " << x_idx << " " << y_idx
-		          << " " << z_idx << "\n";
+		// std::cerr << "Column mapping failed!\n";
+		// std::cerr << "id mol type x y z = " << id_idx << " " << mol_idx
+		//           << " " << type_idx << " " << x_idx << " " << y_idx
+		//           << " " << z_idx << "\n";
 		std::terminate();
 	}
 	if( mol_idx > 0 ){
@@ -189,11 +189,11 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 		atom_style = block_data::ATOMIC;
 	}
 
-	std::cerr << "Other cols:";
+	// std::cerr << "Other cols:";
 	for( int i = 0; i < other_cols.size(); ++i ){
-		std::cerr << " " << other_col_headers[i] << "( "
-		          << other_cols[i] << " )";
+		// std::cerr << " " << other_col_headers[i] << "( "
+		//           << other_cols[i] << " )";
 	}
-	std::cerr << "\n";
+	// std::cerr << "\n";
 }
 

@@ -140,8 +140,10 @@ void copy( block_data &b, const block_data &source )
 	b.boxline = source.boxline;
 	b.periodic = source.periodic;
 
+	/*
 	std::cerr << "Copying " << source.other_cols.size()
 	          << " other cols as well...\n";
+	*/
 	
 	b.other_cols.resize( source.other_cols.size() );
 	for( int i = 0; i < b.other_cols.size(); ++i ){

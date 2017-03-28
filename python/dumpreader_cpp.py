@@ -42,6 +42,8 @@ class dumpreader_cpp:
         
         if not lammpstools.dump_reader_next_block( self.handle ):
             print("An error happened reading the next block!",file=sys.stderr)
+            self.at_eof = True
+            return None
 
         lammpstools.dump_reader_get_block_meta( self.handle, byref(tstep), byref(N),
                                                 ctypes.c_void_p(xlo.ctypes.data),
@@ -51,8 +53,7 @@ class dumpreader_cpp:
                                                 byref(atom_style) )
 
         box_line = str( box_line_buff, 'utf-8' )
-        print("Now I can just allocate arrays of size ", N.value, " in Python. :)")
-        print("boxline is now ", box_line )
+
         x     = np.empty( [N.value, 3], dtype = float )
         ids   = np.empty( N.value, dtype = int )
         types = np.empty( N.value, dtype = int )

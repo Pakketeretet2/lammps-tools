@@ -262,11 +262,11 @@ bool dump_reader_next_block( dump_reader_handle *dh )
 	block_data block;
 	bool status = dh->reader->next_block( block );
 	if( !status ){
-		std::cerr << "Failed to get next block";
+		std::cerr << "Failed to get next block\n";
 		return false;
 	}
-	std::cerr << "Got next block of " << block.N
-	          << " particles at time " << block.tstep << ".\n";
+	// std::cerr << "Got next block of " << block.N
+	//           << " particles at time " << block.tstep << ".\n";
 	copy( *(dh->last_block), block );
 	return true;
 }
@@ -292,25 +292,25 @@ void dump_reader_get_block_meta( dump_reader_handle *dh,
 	*periodic   = lb->periodic;
 	*atom_style = lb->atom_style;
 	if( boxline ){
-		std::cerr << "Before writing, external boxline is ";
+		// std::cerr << "Before writing, external boxline is ";
 		for( int i = 0; i < lb->boxline.size(); ++i ){
-			std::cerr << static_cast<char>(boxline[i]);
+			// std::cerr << static_cast<char>(boxline[i]);
 		}
-		std::cerr << "\n";
+		// std::cerr << "\n";
 		for( int i = 0; i < lb->boxline.size(); ++i ){
 			boxline[i] = static_cast<char>( lb->boxline[i] );
 		}
 		// boxline[lb->boxline.size()] = '\0';
-		std::cerr << "Internal boxline is ";
+		// std::cerr << "Internal boxline is ";
 		for( int i = 0; i < lb->boxline.size(); ++i ){
-			std::cerr << lb->boxline[i];
+			// std::cerr << lb->boxline[i];
 		}
-		std::cerr << "\n";
-		std::cerr << "After writing, external boxline is ";
+		// std::cerr << "\n";
+		// std::cerr << "After writing, external boxline is ";
 		for( int i = 0; i < lb->boxline.size(); ++i ){
-			std::cerr << static_cast<char>(boxline[i]);
+			// std::cerr << static_cast<char>(boxline[i]);
 		}
-		std::cerr << "\n";
+		// std::cerr << "\n";
 	}
 }
 	
@@ -318,7 +318,7 @@ void dump_reader_get_block_data( dump_reader_handle *dh,
                                  py_int N, py_float *x, py_int *ids,
                                  py_int *types, py_int *mol )
 {
-	std::cerr << "Writing " << N << " particles.\n";
+	// std::cerr << "Writing " << N << " particles.\n";
 	if( !x || !ids || !types ){
 		std::cerr << "One of the essential arrays not "
 		          << "allocated properly.\n";
