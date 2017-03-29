@@ -23,6 +23,7 @@ public:
 	
 	virtual bool getline( std::string &line );
 	virtual void rewind();
+
 };
 
 
@@ -31,9 +32,24 @@ class dump_interpreter
 public:
 	dump_interpreter(){}
 	virtual ~dump_interpreter(){}
-	
+
 	virtual bool next_block( reader_core *r, block_data &block );
 	virtual bool last_block( reader_core *r, block_data &block );
+
+	///< Calling next_block_meta only leaves the block in a half-
+	///< half-initialised state! You can read out the meta but not the rest.
+	virtual bool next_block_meta( reader_core *r, block_data &block );
+	virtual bool next_block_body( reader_core *r, block_data &block );
+
+	struct block_meta {
+		py_int N, tstep;
+		py_float xlo[3], xhi[3];
+		std::string boxline;
+	};
+
+protected:
+	std::string last_line;
+	block_meta  last_meta;
 };
 
 
@@ -120,9 +136,9 @@ void dump_reader_get_block_data( dump_reader_handle *dh,
                                  py_int N, py_float *x, py_int *ids,
                                  py_int *types, py_int *mol );
 
+bool dump_reader_fast_forward( dump_reader_handle *dh,
+                               py_int N_blocks );
 
-// TODO: Think of a way to copy the data from the C++ side to Python...
-//       Maybe through a pipe? It's lame but works.
 	
 
 } // extern "C"

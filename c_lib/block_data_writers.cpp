@@ -4,9 +4,9 @@
 void write_block_lammps_dump( const block_data &b, std::ostream &o )
 {
 	std::string header_line = "ITEM: ATOMS id type x y z";
-	if( b.atom_style == block_data::MOLECULAR ){
+	if( b.atom_style == atom_styles::MOLECULAR ){
 		header_line = "ITEM: ATOMS id mol type x y z";
-	}else if( b.atom_style == block_data::ATOMIC ){
+	}else if( b.atom_style == atom_styles::ATOMIC ){
 		
 	}else{
 		std::cerr << "Unknown atom style!\n";
@@ -26,10 +26,10 @@ void write_block_lammps_dump( const block_data &b, std::ostream &o )
 	}
 	o << "\n";
 	for( py_int i = 0; i < b.N; ++i ){
-		if( b.atom_style == block_data::ATOMIC ){
+		if( b.atom_style == atom_styles::ATOMIC ){
 			o << b.ids[i] << " " << b.types[i] << " " << b.x[i][0]
 			  << " " << b.x[i][1] << " " << b.x[i][2];
-		}else if( b.atom_style == block_data::MOLECULAR ){
+		}else if( b.atom_style == atom_styles::MOLECULAR ){
 			o << b.ids[i] << " " << b.mol[i] << " " << b.types[i]
 			  << " " << b.x[i][0] << " " << b.x[i][1] << " "
 			  << b.x[i][2];

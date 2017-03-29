@@ -31,7 +31,11 @@ class dumpreader_cpp:
 
     def __next__(self):
         if not self.at_eof:
-            return self.getblock()
+            tmp_b = self.getblock()
+            if tmp_b is None:
+                raise StopIteration
+            else:
+                return tmp_b
         else:
             raise StopIteration
 
@@ -52,7 +56,7 @@ class dumpreader_cpp:
         box_line_buff = ctypes.create_string_buffer(8)
         
         if not lammpstools.dump_reader_next_block( self.handle ):
-            print("An error happened reading the next block!",file=sys.stderr)
+            # print("An error happened reading the next block!",file=sys.stderr)
             self.at_eof = True
             return None
 
@@ -80,4 +84,21 @@ class dumpreader_cpp:
         meta = block_meta( tstep.value, N.value, dom )
         b = block_data( meta, ids, types, x, mol )
         return b
+
+    
+    def fast_forward(self,Nblocks=1):
+        """! Fast-forwards Nblocks. """
+        if self.at_eof:
+            print("At EOF already, cannot get more blocks!", file = sys.stderr)
+            return None
+
+        lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+
+        success = lammpstools.dump_reader_fast_forward( self.handle, Nblocks )
+        if success:
+            pass
+        else:
+            print("Fast-forward failed, probably encountered EOF.", file = sys.stderr)
+            self.at_eof = True
+
         

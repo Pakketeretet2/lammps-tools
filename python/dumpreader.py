@@ -334,8 +334,8 @@ class dumpreader:
 
             counter += 1
             
-        print("Forwarded %d lines. Next line is now:" % meta.N, file = sys.stderr)
-        print("'%s'" % line, file = sys.stderr)
+        #print("Forwarded %d lines. Next line is now:" % meta.N, file = sys.stderr)
+        #print("'%s'" % line, file = sys.stderr)
         
     def getblock_at_time(self,tstep):
         while not self.at_eof:

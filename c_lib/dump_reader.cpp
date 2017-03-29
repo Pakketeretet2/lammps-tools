@@ -65,7 +65,23 @@ void reader_core::rewind()
 
 bool dump_interpreter::next_block( reader_core *r, block_data &block )
 {
-	std::cerr << "Do not use dump_interpreter::next_block. "
+	std::cerr << "Do not use dump_interpreter directly! "
+	          << "Use a derived class!\n";
+	std::terminate();
+	return false;
+}
+
+bool dump_interpreter::next_block_meta( reader_core *r, block_data &block )
+{
+	std::cerr << "Do not use dump_interpreter directly! "
+	          << "Use a derived class!\n";
+	std::terminate();
+	return false;
+}
+
+bool dump_interpreter::next_block_body( reader_core *r, block_data &block )
+{
+	std::cerr << "Do not use dump_interpreter directly! "
 	          << "Use a derived class!\n";
 	std::terminate();
 	return false;
@@ -200,13 +216,19 @@ bool dump_reader::skip_blocks( int Nblocks )
 	bool success = false;
 	for( int i = 0; i < Nblocks; ++i ){
 		block_data b;
-		success = next_block( b );
+		success = interp->next_block_meta( reader, b );
 		if( !success ){
 			return success;
+		}
+		// line is at "ITEM: TIMESTEP now. Skip b.N + 1 line."
+		std::string tmp;
+		for( int i = 0; i < b.N; ++i ){
+			reader->getline( tmp );
 		}
 	}
 	return success;
 }
+
 
 bool dump_reader::skip_block ( )
 {
@@ -344,4 +366,11 @@ void dump_reader_get_block_data( dump_reader_handle *dh,
 	}
 }
 
+bool dump_reader_fast_forward( dump_reader_handle *dh,
+                               py_int N_blocks )
+{
+	return dh->reader->skip_blocks( N_blocks );
+}
+
+	
 } // extern "C"
