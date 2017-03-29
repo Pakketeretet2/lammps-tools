@@ -179,7 +179,7 @@ def block_to_dump_write(b, fname, write_mode = "w", file_mode = "plain"):
     print(b.meta.t, file = dump_file)
     print("ITEM: NUMBER OF ATOMS", file = dump_file)
     print(b.meta.N, file = dump_file)
-    print("ITEM: BOX BOUNDS ", b.meta.domain.box_line, file = dump_file)
+    print("ITEM: BOX BOUNDS", b.meta.domain.box_line, file = dump_file)
     print("%f  %f" % ( b.meta.domain.xlo[0], b.meta.domain.xhi[0] ), file = dump_file)
     print("%f  %f" % ( b.meta.domain.xlo[1], b.meta.domain.xhi[1] ), file = dump_file)
     print("%f  %f" % ( b.meta.domain.xlo[2], b.meta.domain.xhi[2] ), file = dump_file)
