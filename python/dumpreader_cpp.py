@@ -26,6 +26,17 @@ class dumpreader_cpp:
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
         lammpstools.release_dump_reader_handle( self.handle )
 
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if not self.at_eof:
+            return self.getblock()
+        else:
+            raise StopIteration
+
+        
+
     def getblock(self):
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
         domain = domain_data( np.array( [0, 0, 0] ), np.array( [0, 0, 0] ),

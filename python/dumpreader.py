@@ -51,7 +51,15 @@ class dumpreader:
             self.bad_file = 1
             return
         self.smooth_open(fname)
-        
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if not self.at_eof:
+            return self.getblock()
+        else:
+            raise StopIteration
 
     def smooth_open(self,fname):
         """! Gracefully opens file, checks if gzipped or not. """
