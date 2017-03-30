@@ -40,6 +40,7 @@ class block_data:
             self.mol = None # np.zeros( meta.N, dtype = int )
         else:
             self.mol = mol
+            self.atom_style = "molecule"
             
         self.other_cols = []
 
@@ -245,7 +246,7 @@ def block_to_data(b,fname, overwrite = False):
     print("Atoms", file = f )
     print("", file = f )
 
-    if( b.meta.atom_style == "molecular" ):
+    if( b.meta.atom_style == "molecule" ):
         for i in range(0,b.meta.N):
             print("%d %d %d %f %f %f" % (b.ids[i], b.mol[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2]), file = f )
     else:
