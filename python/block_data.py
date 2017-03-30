@@ -1,5 +1,5 @@
-"""! @package dumpreader
-This package contains functions for extracting dump files.
+"""! @package block_data
+This package contains definitions for block_data, which is atom info per time step
 
 \ingroup lammpstools
 """
