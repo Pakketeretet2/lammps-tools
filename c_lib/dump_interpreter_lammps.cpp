@@ -1,5 +1,6 @@
 #include "dump_interpreter_lammps.h"
 
+#include "util.h"
 
 bool dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block )
 {
@@ -67,7 +68,7 @@ bool dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block
 			set_headers( line.substr( 12 ) );
 		}
 		
-		
+		block.atom_style = atom_style;
 		block.boxline = last_meta.boxline;
 		block.tstep = last_meta.tstep;
 		
@@ -109,25 +110,35 @@ bool dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block
 			block.x[i][0]  = std::stof( words[x_idx] );
 			block.x[i][1]  = std::stof( words[y_idx] );
 			block.x[i][2]  = std::stof( words[z_idx] );
+			block.atom_style = atom_style;
 			
-			if( scaled | BIT_X ){
+			
+			if( is_bit<BIT_X>(scaled) ){
+				std::cerr << "Scaling x because scaled = "
+				          << scaled << "\n";
 				block.x[i][0] *= Lx;
 				block.x[i][0] += block.xlo[0];
 			}
 			
-			if( scaled | BIT_Y ){
+			if( is_bit<BIT_Y>(scaled) ){
+				std::cerr << "Scaling y because scaled = "
+				          << scaled << "\n";
 				block.x[i][1] *= Ly;
 				block.x[i][1] += block.xlo[1];
 			}
 			
-			if( scaled | BIT_Z ){
+			if( is_bit<BIT_Z>( scaled ) ){
+				std::cerr << "Scaling z because scaled = "
+				          << scaled << "\n";
 				block.x[i][2] *= Lz;
 				block.x[i][2] += block.xlo[2];
 			}
 			
 			if( atom_style == atom_styles::MOLECULAR ){
 				block.mol[i] = std::stoul( words[mol_idx] );
+				block.atom_style = atom_style;
 			}
+
 			
 			std::size_t k = 0;
 			for( int j : other_cols ){
@@ -135,6 +146,8 @@ bool dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block
 				block.other_cols[k].data[i] = val;
 			}
 		}
+
+		std::cerr << "Block has atom_style " << block.atom_style << ".\n";
 
 		
 		return true;
@@ -182,23 +195,32 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 			if( hh == "id" ){
 				id_idx = header_idx;
 			}else if( hh == "mol" ){
+				std::cerr << "Encountered mol header: " << hh
+				          << ", position is " << header_idx
+				          << ".\n";
 				mol_idx = header_idx;
 			}else if( hh == "type" ){
 				type_idx = header_idx;
 			}else if( starts_with( hh, "x" ) ){
 				x_idx = header_idx;
 				if( hh == "xs" ){
-					scaled += BIT_X;
+					set_bit< BIT_X >( scaled );
+				}else{
+					clear_bit< BIT_X >( scaled );
 				}
 			}else if( starts_with( hh, "y" ) ){
 				y_idx = header_idx;
 				if( hh == "ys" ){
-					scaled += BIT_Y;
+					set_bit< BIT_Y >( scaled );
+				}else{
+					clear_bit< BIT_Y >( scaled );
 				}
 			}else if( starts_with( hh, "z" ) ){
 				z_idx = header_idx;
 				if( hh == "zs" ){
-					scaled += BIT_Z;
+					set_bit< BIT_Z >( scaled );
+				}else{
+					clear_bit< BIT_Z >( scaled );
 				}
 			}else{
 				other_col_headers.push_back( hh );
@@ -209,6 +231,12 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 			++header_idx;
 		}
 	}while( h );
+
+	if( scaled ){
+		std::cerr << "scaled is " << scaled << "\n";
+	}else{
+		std::cerr << "No scaling involved!\n";
+	}
 
 	if( id_idx < 0 || type_idx < 0 || x_idx < 0 || y_idx < 0 || z_idx < 0 ){
 		// std::cerr << "Column mapping failed!\n";
@@ -229,5 +257,10 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 		//           << other_cols[i] << " )";
 	}
 	// std::cerr << "\n";
+
+	std::cerr << "id mol type x y z = " << id_idx << " " << mol_idx
+	          << " " << type_idx << " " << x_idx << " " << y_idx
+	          << " " << z_idx << "\n";
+
 }
 

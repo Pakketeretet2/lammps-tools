@@ -313,6 +313,9 @@ void dump_reader_get_block_meta( dump_reader_handle *dh,
 
 	*periodic   = lb->periodic;
 	*atom_style = lb->atom_style;
+
+	std::cerr << "Atom style in C++ part is " << lb->atom_style << "\n";
+	
 	if( boxline ){
 		// std::cerr << "Before writing, external boxline is ";
 		for( int i = 0; i < lb->boxline.size(); ++i ){
@@ -354,10 +357,15 @@ void dump_reader_get_block_data( dump_reader_handle *dh,
 		ids[i] = dh->last_block->ids[i];
 		types[i] = dh->last_block->types[i];
 	}
+
+	
 	if( mol ){
-		if( !dh->last_block->mol ){
-			std::cerr << "WARNING: Mol requested but not contained "
-			          << "by dump! Ignoring...\n";
+		if( dh->last_block->atom_style == atom_styles::ATOMIC ){
+			std::cerr << "WARNING: Mol requested but atom style "
+			          << "does not support it! Ignoring...\n";
+		}else if( !dh->last_block->mol ){
+			std::cerr << "WARNING: Mol requested but block does "
+			          << "not have mol array! Ignoring...\n";
 		}else{
 			for( int i = 0; i < N; ++i ){
 				mol[i] = dh->last_block->mol[i];

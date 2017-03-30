@@ -22,7 +22,7 @@ public:
 private:
 	enum { BIT_X = 1,
 	       BIT_Y = 2,
-	       BIT_Z = 4 };
+	       BIT_Z = 3 };
 	
 	int id_idx;
 	int type_idx;

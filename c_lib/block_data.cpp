@@ -1,5 +1,4 @@
 #include "block_data.h"
-
 #include <iostream>
 #include <fstream>
 #include <algorithm>
