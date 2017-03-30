@@ -40,7 +40,7 @@ class block_data:
             self.mol = None # np.zeros( meta.N, dtype = int )
         else:
             self.mol = mol
-            self.atom_style = "molecular"
+            self.meta.atom_style = "molecular"
             
         self.other_cols = []
 
