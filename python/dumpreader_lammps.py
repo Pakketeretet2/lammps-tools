@@ -443,7 +443,7 @@ def block_to_dump_write(b, fname, write_mode = "w", file_mode = "plain"):
 
     if b.meta.atom_style == "atomic":
         atom_string = "ITEM: ATOMS id type x y z"
-    elif b.meta.atom_style == "molecule":
+    elif b.meta.atom_style == "molecular":
         atom_string = "ITEM: ATOMS id mol type x y z"
     
     for c in b.other_cols:
@@ -456,7 +456,7 @@ def block_to_dump_write(b, fname, write_mode = "w", file_mode = "plain"):
         #                                b.x[i][0], b.x[i][1], b.x[i][2])
         if b.meta.atom_style == "atomic":
             print(b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2], end = "", file = dump_file)
-        elif b.meta.atom_style == "molecule":
+        elif b.meta.atom_style == "molecular":
             print(b.ids[i], b.mol[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2], end = "", file = dump_file)
 
 
@@ -502,7 +502,7 @@ def block_to_data(b,fname, overwrite = False):
     print("Atoms", file = f )
     print("", file = f )
 
-    if( b.meta.atom_style == "molecule" ):
+    if( b.meta.atom_style == "molecular" ):
         for i in range(0,b.meta.N):
             print("%d %d %d %f %f %f" % (b.ids[i], b.mol[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2]), file = f )
     else:
