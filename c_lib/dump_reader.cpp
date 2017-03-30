@@ -301,8 +301,8 @@ void dump_reader_get_block_meta( dump_reader_handle *dh,
 {
 	block_data *lb = dh->last_block;
 	*tstep = lb->tstep;
-	*N     = lb->N;
-	
+        *N     = lb->N;
+
 	xlo[0] = lb->xlo[0];
 	xlo[1] = lb->xlo[1];
 	xlo[2] = lb->xlo[2];
@@ -313,8 +313,8 @@ void dump_reader_get_block_meta( dump_reader_handle *dh,
 
 	*periodic   = lb->periodic;
 	*atom_style = lb->atom_style;
-
-	std::cerr << "Atom style in C++ part is " << lb->atom_style << "\n";
+	
+	// std::cerr << "Atom style in C++ part is " << lb->atom_style << "\n";
 	
 	if( boxline ){
 		// std::cerr << "Before writing, external boxline is ";
@@ -325,6 +325,7 @@ void dump_reader_get_block_meta( dump_reader_handle *dh,
 		for( int i = 0; i < lb->boxline.size(); ++i ){
 			boxline[i] = static_cast<char>( lb->boxline[i] );
 		}
+		
 		// boxline[lb->boxline.size()] = '\0';
 		// std::cerr << "Internal boxline is ";
 		for( int i = 0; i < lb->boxline.size(); ++i ){
@@ -361,17 +362,21 @@ void dump_reader_get_block_data( dump_reader_handle *dh,
 	
 	if( mol ){
 		if( dh->last_block->atom_style == atom_styles::ATOMIC ){
+			/*
 			std::cerr << "WARNING: Mol requested but atom style "
 			          << "does not support it! Ignoring...\n";
+			*/
 		}else if( !dh->last_block->mol ){
 			std::cerr << "WARNING: Mol requested but block does "
 			          << "not have mol array! Ignoring...\n";
 		}else{
 			for( int i = 0; i < N; ++i ){
+
 				mol[i] = dh->last_block->mol[i];
 			}
 		}
 	}
+
 }
 
 bool dump_reader_fast_forward( dump_reader_handle *dh,
