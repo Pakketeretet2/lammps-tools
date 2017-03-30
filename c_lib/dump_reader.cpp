@@ -307,7 +307,7 @@ void dump_reader_get_block_meta( dump_reader_handle *dh,
 	xlo[1] = lb->xlo[1];
 	xlo[2] = lb->xlo[2];
 
-	xhi[0] = lb->xlo[0];
+	xhi[0] = lb->xhi[0];
 	xhi[1] = lb->xhi[1];
 	xhi[2] = lb->xhi[2];
 
