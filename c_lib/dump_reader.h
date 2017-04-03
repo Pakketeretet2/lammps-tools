@@ -40,6 +40,7 @@ public:
 	///< half-initialised state! You can read out the meta but not the rest.
 	virtual bool next_block_meta( reader_core *r, block_data &block );
 	virtual bool next_block_body( reader_core *r, block_data &block );
+	
 
 	struct block_meta {
 		py_int N, tstep;
@@ -59,17 +60,48 @@ public:
 	enum FILE_FORMATS {
 		PLAIN   = 0,
 		GZIP    = 1,
-		ISTREAM = 2
+		ISTREAM = 2,
+		BIN     = 3
 	};
 	
 	enum DUMP_FORMATS {
 		LAMMPS  = 0,
-		GSD     = 1
+		GSD     = 1,
+		DCD     = 2
 	};
 
-	dump_reader( std::istream &stream, int dump_format );
-	dump_reader( const std::string &fname, int dump_format = LAMMPS,
-	             int file_format = PLAIN );
+	static const char *fformat_to_str( int file_format )
+	{
+		switch( file_format ){
+			default:
+				return "UNKNOWN!";
+			case PLAIN:
+				return "PLAIN TEXT";
+			case GZIP:
+				return "GZIPPED TEXT";
+			case ISTREAM:
+				return "INPUT STREAM";
+			case BIN:
+				return "BINARY";
+		}
+	}
+	static const char *dformat_to_str( int dformat )
+	{
+		switch( dformat ){
+			default:
+				return "UNKOWN!";
+			case LAMMPS:
+				return "LAMMPS";
+			case GSD:
+				return "GSD";
+			case DCD:
+				return "DCD";
+		}
+	}
+
+	dump_reader( std::istream &stream, int dformat = LAMMPS );
+	dump_reader( const std::string &fname );
+	
 
 	void setup_reader( std::istream &stream );
 	void setup_reader( const std::string &fname, int format );

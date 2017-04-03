@@ -11,9 +11,10 @@
 
 #include "reader_core_plain.h"
 #include "reader_core_gzip.h"
+#include "reader_core_binary.h"
 
 #include "dump_interpreter_lammps.h"
-
+#include "dump_interpreter_dcd.h"
 
 
 struct dummy_stream
@@ -106,7 +107,7 @@ bool dump_interpreter::last_block( reader_core *r, block_data &block )
 
 
 // ***************** DUMPREADER STUFF ********************
-dump_reader::dump_reader( std::istream &stream, int dformat )
+dump_reader::dump_reader( std::istream &stream, int dformat ) : dump_format( dformat )
 {
 	file_format = ISTREAM;
 	dump_format = dformat;
@@ -115,11 +116,9 @@ dump_reader::dump_reader( std::istream &stream, int dformat )
 	setup_reader( stream );
 }
 
-dump_reader::dump_reader( const std::string &fname, int dformat,
-                          int file_format )
+dump_reader::dump_reader( const std::string &fname ) : dump_format( -1 ),
+                                                       file_format( PLAIN )
 {
-	file_format = PLAIN;
-	dump_format = dump_format;
 	
 	if( ends_with( fname, ".gz" ) ){
 		file_format = GZIP;
@@ -131,6 +130,9 @@ dump_reader::dump_reader( const std::string &fname, int dformat,
 		dump_format = LAMMPS;
 	}else if( ends_with( fname, ".dump.gz" ) ){
 		dump_format = LAMMPS;
+	}else if( ends_with( fname, ".dcd" ) ){
+		dump_format = DCD;
+		file_format = BIN;
 	}else{
 		std::cerr << "Extension of dump file " << fname
 		          << " not recognized! If you are certain of the "
@@ -138,9 +140,14 @@ dump_reader::dump_reader( const std::string &fname, int dformat,
 		std::terminate();
 	}
 
-	setup_interpreter( dformat );
+
+	std::cerr << "File format assumed to be " << file_format << " ( "
+	          << dump_reader::fformat_to_str(file_format) << " ), dump type "
+	          << dump_format << " ( "
+	          << dump_reader::dformat_to_str(dump_format) << " ).\n";
+
+	setup_interpreter( dump_format );
 	setup_reader( fname, file_format );
-	
 }
 
 
@@ -166,12 +173,13 @@ void dump_reader::setup_reader( const std::string &fname, int format )
 		reader = new reader_core_gzip( fname );
 	}else if( format == PLAIN ){
 		reader = new reader_core_plain( fname );
+	}else if( format == BIN ){
+		reader = new reader_core_bin( fname );
 	}else{
 		std::cerr << "File format for reader not recognized!\n";
 		std::terminate();
 	}
 
-	
 	if( !reader ){
 		std::cerr << "Failure setting up reader!\n";
 		std::terminate();
@@ -184,6 +192,11 @@ void dump_reader::setup_interpreter( int dump_format )
 		interp = new dump_interpreter_lammps();
 	}else if( dump_format == GSD ){
 		// interp = new dump_interpreter_gsd();
+		std::cerr << "GSD not supported yet!\n";
+		std::terminate();
+	}else if( dump_format == DCD ){
+		std::cerr << "Creating dcd interpreter.\n";
+		interp = new dump_interpreter_dcd();
 	}else{
 		std::cerr << "Unrecognized dump format!\n";
 		std::terminate();
