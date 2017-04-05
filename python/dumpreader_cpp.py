@@ -57,7 +57,7 @@ class dumpreader_cpp:
         periodic = ctypes.c_longlong(0)
 
         # Should fit "ITEM: BOX BOUNDS pp pp pp\0"
-        box_line_buff = ctypes.create_string_buffer(32)
+        box_line_buff = ctypes.create_string_buffer(26)
 
         if not lammpstools.dump_reader_next_block( self.handle ):
             # print("An error happened reading the next block!",file=sys.stderr)

@@ -9,6 +9,7 @@ import gzip
 import os
 import sys
 import copy
+from ctypes import *
 
 
 class domain_data:
@@ -309,3 +310,61 @@ def copy_meta_new_block( b_old, Xnew, id_new = None, type_new = None, mol_new = 
     bb = block_data( bm, ids, types, X, mol )
     return bb
 
+
+def block_data_from_foreign( X, ids, types, mol, periodic, xlo, xhi,
+                             dims, tstep, boxline ):
+    """! Constructs a block_data object from given arrays. """
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+
+    N    = len(X)
+    dom  = block_data.domain_data( xlo, xhi, periodic, boxline )
+    meta = block_data.block_meta( 0, N, dom )
+    b    = block_data.block_data( meta, ids, types, X, mol )
+    return b
+
+def blocks_from_xyz( fname, pad = None, xxlo = None, xxhi = None ):
+    """! Constructs a list of block_datas from a given xyz file. """
+
+    blocks = []
+    if pad is None:
+        pad = 2
+
+    tstep = 0
+    with open(fname,"r") as f:
+        for l in f:
+            l = l.rstrip()
+            N = int(l)
+            X     = np.zeros( [N,3] )
+            ids   = np.array( [ i for i in range(1,N+1) ], dtype = int )
+            types = np.ones( N, dtype = int )
+            l = f.readline()
+            xlo = np.zeros(3)
+            xhi = np.zeros(3)
+        
+            for i in range(0,N):
+                l = f.readline()
+                l = l.rstrip()
+                w = l.split()
+
+                X[i][0] = float(w[1])
+                X[i][1] = float(w[2])
+                X[i][2] = float(w[3])
+
+                for k in range(0,3):
+                    if X[i][k] < xlo[k]:
+                        xlo[k] = X[i][k]
+                    elif X[i][k] > xhi[k]:
+                        xhi[k] = X[i][k]
+
+            xlo -= pad
+            xhi += pad
+            if not xxlo is None:
+                xlo = xxlo
+            if not xxhi is None:
+                xhi = xxhi
+            dom  = domain_data( xlo, xhi, 0, "ITEM: BOX BOUNDS ff ff ff" )
+            meta = block_meta( tstep, N, dom )
+            b    = block_data( meta, ids, types, X, None )
+            blocks.append(b)
+            tstep += 1
+    return blocks
