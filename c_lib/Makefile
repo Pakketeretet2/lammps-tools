@@ -10,7 +10,7 @@ HAVE_LIB_ARMADILLO = 1
 # For ICP:
 HAVE_LIB_ICP = 0
 # For writing/converting gsd format.
-HAVE_LIB_GSD = 0
+HAVE_LIB_GSD = 1
 # For reading in gzipped dump files.
 HAVE_BOOST_GZIP = 1
 
