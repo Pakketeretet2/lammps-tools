@@ -2,7 +2,7 @@
 #define CENTER_OF_MASS_H
 
 /*!
-  \file communication.h
+  \file center_of_mass.h
   @brief Calculates the centre-of-mass of atoms
 
   \ingroup cpp_lib

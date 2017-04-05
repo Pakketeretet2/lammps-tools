@@ -1,143 +1,189 @@
 #include "dump_interpreter_lammps.h"
 
+#include "util.h"
 
-bool dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
+bool dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block )
 {
 	bool success = false;
 	std::string line;
 
-	py_int N     = 0;
-	py_int tstep = 0;
-	std::string boxline = "";
-	py_float xlo[3], xhi[3];
-	
+
 	while( r->getline( line ) ){
 		if( line == "ITEM: TIMESTEP" ){
 			r->getline( line );
-			tstep = std::stoul( line );
+			last_meta.tstep = std::stoul( line );
 		}else if( line == "ITEM: NUMBER OF ATOMS" ){
 			r->getline( line );
-			N = std::stoul( line );
+			last_meta.N = std::stoul( line );
 		}else if( starts_with( line, "ITEM: BOX BOUNDS " ) ){
-			boxline = line.substr( 17 );
-			
+			last_meta.boxline = line.substr( 17 );
 			r->getline( line );
 			std::stringstream dims( line );
-			dims >> xlo[0] >> xhi[0];
+			dims >> last_meta.xlo[0] >> last_meta.xhi[0];
 			
 			r->getline( line );
 			dims.str(""); dims.clear();
 			dims.str( line );
-			dims >> xlo[1] >> xhi[1];
+			dims >> last_meta.xlo[1] >> last_meta.xhi[1];
 
 			r->getline( line );
 			dims.str(""); dims.clear();
 			dims.str( line );
-			dims >> xlo[2] >> xhi[2];
-
+			dims >> last_meta.xlo[2] >> last_meta.xhi[2];
 		}else if( starts_with( line, "ITEM: ATOMS " ) ){
-			// Figure out which column maps which.
-			// Read out the next b.N lines.
-			block_data b(N);
-			if( headers.empty() ){
-				set_headers( line.substr( 12 ) );
-			}
-			
-			
-			b.boxline = boxline;
-			b.tstep = tstep;
-
-			b.xlo[0] = xlo[0];
-			b.xlo[1] = xlo[1];
-			b.xlo[2] = xlo[2];
-			
-			b.xhi[0] = xhi[0];
-			b.xhi[1] = xhi[1];
-			b.xhi[2] = xhi[2];
-
-			double Lx = b.xhi[0] - b.xlo[0];
-			double Ly = b.xhi[1] - b.xlo[1];
-			double Lz = b.xhi[2] - b.xlo[2];
-			
-
-			b.other_cols.resize( other_cols.size() );
-			for( int i = 0; i < other_cols.size(); ++i ){
-				b.other_cols[i].header = other_col_headers[i];
-				std::cerr << "Resizing other cols to " << b.N << "\n";
-				b.other_cols[i].resize( b.N );
-				std::cerr << b.other_cols[i].header << " was the header.\n";
-			}
-			std::cerr << "Grabbing " << b.N << " atoms.\n";
-			for( int i = 0; i < b.N; ++i ){
-				r->getline( line );
-				
-				std::stringstream ss( line );
-				std::vector<std::string> words( n_cols );
-				std::string w;
-				std::size_t j = 0;
-				while( ss >> w ){
-					// std::cerr << "Word = " << w << "\n";
-					words[j] = w;
-					++j;
-				}
-				
-				b.ids[i]   = std::stoul( words[id_idx] );
-				b.types[i] = std::stoul( words[type_idx] );
-				b.x[i][0]  = std::stof( words[x_idx] );
-				b.x[i][1]  = std::stof( words[y_idx] );
-				b.x[i][2]  = std::stof( words[z_idx] );
-
-				if( scaled | BIT_X ){
-					b.x[i][0] *= Lx;
-					b.x[i][0] += b.xlo[0];
-				}
-				
-				if( scaled | BIT_Y ){
-					b.x[i][1] *= Ly;
-					b.x[i][1] += b.xlo[1];
-				}
-				
-				if( scaled | BIT_Z ){
-					b.x[i][2] *= Lz;
-					b.x[i][2] += b.xlo[2];
-				}
-
-				if( atom_style == block_data::MOLECULAR ){
-					b.mol[i] = std::stoul( words[mol_idx] );
-				}
-
-				std::size_t k = 0;
-				for( int j : other_cols ){
-					double val = std::stof( words[j] );
-					b.other_cols[k].data[i] = val;
-				}
-			}
-			// At this point, b contains everything you want.
-			// Copy it to block and return.
-			std::cerr << "Done with reading block.\n";
-			copy( block, b );
-			
-			return true;
-			
+			// Stop there.
+			last_line = line;
+			success = true;
+			break;
 		}else{
-			std::cerr << "Encountered unknown header!\n";
-			std::cerr << line << "\n";
+			std::cerr << "Encountered line '" << line
+			          << "' and have no clue what to do!\n";
 			return false;
 		}
+	}
+
+	if( success ){
+		block.boxline = last_meta.boxline;
+		block.tstep   = last_meta.tstep;
+		
+		block.xlo[0] = last_meta.xlo[0];
+		block.xlo[1] = last_meta.xlo[1];
+		block.xlo[2] = last_meta.xlo[2];
+		
+		block.xhi[0] = last_meta.xhi[0];
+		block.xhi[1] = last_meta.xhi[1];
+		block.xhi[2] = last_meta.xhi[2];
+		block.N      = last_meta.N;
+		
+	}
+	return success;
+}
+
+bool dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block )
+{
+	std::string line = last_line;
+	py_int N = last_meta.N;
+	// block_data b(N);
+	block.resize( N );
+	
+	if( starts_with( line, "ITEM: ATOMS " ) ){
+		// Figure out which column maps which.
+		// Read out the next block.N lines.
+		if( headers.empty() ){
+			set_headers( line.substr( 12 ) );
+		}
+		
+		block.atom_style = atom_style;
+		block.boxline = last_meta.boxline;
+		block.tstep = last_meta.tstep;
+		
+		block.xlo[0] = last_meta.xlo[0];
+		block.xlo[1] = last_meta.xlo[1];
+		block.xlo[2] = last_meta.xlo[2];
+		
+		block.xhi[0] = last_meta.xhi[0];
+		block.xhi[1] = last_meta.xhi[1];
+		block.xhi[2] = last_meta.xhi[2];
+		
+		double Lx = block.xhi[0] - block.xlo[0];
+		double Ly = block.xhi[1] - block.xlo[1];
+		double Lz = block.xhi[2] - block.xlo[2];
+		
+		block.other_cols.resize( other_cols.size() );
+		for( int i = 0; i < other_cols.size(); ++i ){
+			block.other_cols[i].header = other_col_headers[i];
+			// std::cerr << "Resizing other cols to " << block.N << "\n";
+			block.other_cols[i].resize( block.N );
+			// std::cerr << block.other_cols[i].header << " was the header.\n";
+		}
+		// std::cerr << "Grabbing " << block.N << " atoms.\n";
+		for( int i = 0; i < block.N; ++i ){
+			r->getline( line );
+				
+			std::stringstream ss( line );
+			std::vector<std::string> words( n_cols );
+			std::string w;
+			std::size_t j = 0;
+			while( ss >> w ){
+				// std::cerr << "Word = " << w << "\n";
+				words[j] = w;
+				++j;
+			}
+			
+			block.ids[i]   = std::stoul( words[id_idx] );
+			block.types[i] = std::stoul( words[type_idx] );
+			block.x[i][0]  = std::stof( words[x_idx] );
+			block.x[i][1]  = std::stof( words[y_idx] );
+			block.x[i][2]  = std::stof( words[z_idx] );
+			block.atom_style = atom_style;
+			
+			
+			if( is_bit<BIT_X>(scaled) ){
+				block.x[i][0] *= Lx;
+				block.x[i][0] += block.xlo[0];
+			}
+			
+			if( is_bit<BIT_Y>(scaled) ){
+				block.x[i][1] *= Ly;
+				block.x[i][1] += block.xlo[1];
+			}
+			
+			if( is_bit<BIT_Z>( scaled ) ){
+				block.x[i][2] *= Lz;
+				block.x[i][2] += block.xlo[2];
+			}
+			
+			if( atom_style == atom_styles::MOLECULAR ){
+				block.mol[i] = std::stoul( words[mol_idx] );
+				block.atom_style = atom_style;
+			}
+
+			
+			std::size_t k = 0;
+			for( int j : other_cols ){
+				double val = std::stof( words[j] );
+				block.other_cols[k].data[i] = val;
+			}
+		}
+
+		// std::cerr << "Block has atom_style " << block.atom_style << ".\n";
+
+		
+		return true;
+		
+	}else{
+		// std::cerr << "Encountered unknown header!\n";
+		// std::cerr << line << "\n";
+		return false;
 	}
 	return false;
 }
 
+       
+
+
+
+bool dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
+{
+	bool success = false;
+	success = next_block_meta( r, block );
+	if( success ){
+		return next_block_body( r, block );		
+	}else{
+		return false;
+	}
+}
+
 void dump_interpreter_lammps::set_headers( const std::string &h_line )
 {
-	std::cerr << "Figuring out atom columns...\n";
-	std::cerr << "Headers: " << h_line << "\n";
+	// std::cerr << "Figuring out atom columns...\n";
+	// std::cerr << "Headers: " << h_line << "\n";
 
 	std::stringstream h( h_line );
 	int header_idx = 0;
 
 	if( !other_col_headers.empty() ){
-		std::cerr << "This is strange...\n";
+		// std::cerr << "This is strange...\n";
 	}
 	
 	do{
@@ -154,23 +200,29 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 			}else if( starts_with( hh, "x" ) ){
 				x_idx = header_idx;
 				if( hh == "xs" ){
-					scaled += BIT_X;
+					set_bit< BIT_X >( scaled );
+				}else{
+					clear_bit< BIT_X >( scaled );
 				}
 			}else if( starts_with( hh, "y" ) ){
 				y_idx = header_idx;
 				if( hh == "ys" ){
-					scaled += BIT_Y;
+					set_bit< BIT_Y >( scaled );
+				}else{
+					clear_bit< BIT_Y >( scaled );
 				}
 			}else if( starts_with( hh, "z" ) ){
 				z_idx = header_idx;
 				if( hh == "zs" ){
-					scaled += BIT_Z;
+					set_bit< BIT_Z >( scaled );
+				}else{
+					clear_bit< BIT_Z >( scaled );
 				}
 			}else{
 				other_col_headers.push_back( hh );
 				other_cols.push_back( header_idx );
-				std::cerr << "Got other col: " << hh
-				          << ", at index " << header_idx << "\n";
+				// std::cerr << "Got other col: " << hh
+				//           << ", at index " << header_idx << "\n";
 			}
 			++header_idx;
 		}
@@ -184,16 +236,19 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 		std::terminate();
 	}
 	if( mol_idx > 0 ){
-		atom_style = block_data::MOLECULAR;
+		atom_style = atom_styles::MOLECULAR;
 	}else{
-		atom_style = block_data::ATOMIC;
+		atom_style = atom_styles::ATOMIC;
 	}
 
-	std::cerr << "Other cols:";
+	// std::cerr << "Other cols:";
 	for( int i = 0; i < other_cols.size(); ++i ){
-		std::cerr << " " << other_col_headers[i] << "( "
-		          << other_cols[i] << " )";
+		// std::cerr << " " << other_col_headers[i] << "( "
+		//           << other_cols[i] << " )";
 	}
-	std::cerr << "\n";
+	// std::cerr << "\n";
+
+
+
 }
 

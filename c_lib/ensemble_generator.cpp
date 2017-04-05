@@ -1,7 +1,6 @@
 #include <cmath>
 #include <memory>
 #include <algorithm>
-#include <mpi.h>
 
 #include "ensemble_generator.h"
 
@@ -11,6 +10,7 @@
 #ifdef HAVE_LIB_LAMMPS
 #define USE_PHONY_LAMMPS
 #include "manifold_factory.h"
+#include <mpi.h>
 #endif
 
 #include "domain.h"

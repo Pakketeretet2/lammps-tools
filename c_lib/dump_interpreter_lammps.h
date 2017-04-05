@@ -9,16 +9,20 @@ class dump_interpreter_lammps : public dump_interpreter
 public:
 	dump_interpreter_lammps() : id_idx(-1), type_idx(-1), x_idx(-1),
 	                            y_idx(-1), z_idx(-1), mol_idx(-1),
-	                            n_cols(0), atom_style( block_data::ATOMIC ),
+	                            n_cols(0), atom_style( atom_styles::ATOMIC ),
 	                            scaled(0)
 	{}
 	virtual ~dump_interpreter_lammps(){}
-
 	virtual bool next_block( reader_core *r, block_data &block );
+
+	virtual bool next_block_meta( reader_core *r, block_data &block );
+	virtual bool next_block_body( reader_core *r, block_data &block );
+	
+	
 private:
 	enum { BIT_X = 1,
 	       BIT_Y = 2,
-	       BIT_Z = 4 };
+	       BIT_Z = 3 };
 	
 	int id_idx;
 	int type_idx;

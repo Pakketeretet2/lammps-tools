@@ -2,7 +2,7 @@ SHELL = /bin/sh
 
 CC = g++
 FLAGS = -std=c++11 -g -pedantic -frounding-math -shared -fPIC -g \
-	-Werror=int-conversion -Werror=implicit \
+	-Werror=int-conversion -Werror=implicit -L/usr/lib/openmpi/  \
 	-Werror=return-type -Werror=uninitialized -Wall
 
 PY_DIR     = "/usr/include/python2.7/"
@@ -35,7 +35,7 @@ endif
 ifeq ($(HAVE_LIB_LAMMPS), 1)
 # LAMMPS-features depend on MPI, so then it needs to be compiled with mpicxx
 	CC      =  mpicxx
-	LNK     += -llammps
+	LNK     += -lmpi -lmpi_cxx -llammps
 	FLAGS   += -DHAVE_LIB_LAMMPS
 	INC     += -I$(LAMMPS_DIR)
 	LMP_SRC := $(shell ls $(LAMMPS_DIR)/manifold_*.$(EXT) | grep -v rattle)

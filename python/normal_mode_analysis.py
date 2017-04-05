@@ -154,7 +154,7 @@ def pass_blocks_to_clib( d ):
     
     pipe_status = lammpstools.get_pipe( pname )
     if pipe_status != 0:
-        print("Pipe status was not 0 b.meta.t ", pipe_status, file = sys.stderr)
+        print("Pipe status was not 0 but ", pipe_status, file = sys.stderr)
     else:
         print("Pipe named %s succesfully opened." % pname, file = sys.stderr)
 

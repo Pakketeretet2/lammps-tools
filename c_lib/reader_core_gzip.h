@@ -21,9 +21,11 @@ public:
 	virtual void rewind();
 
 private:
-#ifdef HAVE_BOOST_GZIP
 	std::ifstream infile;
+#ifdef HAVE_BOOST_GZIP
 	boost::iostreams::filtering_istream in;
+#else
+	std::istream &in;
 #endif
 };
 

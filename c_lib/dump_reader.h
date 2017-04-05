@@ -1,6 +1,15 @@
 #ifndef DUMP_READER_H
 #define DUMP_READER_H
 
+/*!
+  @file dump_reader.h
+  @brief An interface for reading various dump files.
+
+  \ingroup cpp_lib
+*/
+
+
+
 #include "util.h"
 #include "block_data.h"
 
@@ -14,6 +23,7 @@ public:
 	
 	virtual bool getline( std::string &line );
 	virtual void rewind();
+
 };
 
 
@@ -22,9 +32,25 @@ class dump_interpreter
 public:
 	dump_interpreter(){}
 	virtual ~dump_interpreter(){}
-	
+
 	virtual bool next_block( reader_core *r, block_data &block );
 	virtual bool last_block( reader_core *r, block_data &block );
+
+	///< Calling next_block_meta only leaves the block in a half-
+	///< half-initialised state! You can read out the meta but not the rest.
+	virtual bool next_block_meta( reader_core *r, block_data &block );
+	virtual bool next_block_body( reader_core *r, block_data &block );
+	
+
+	struct block_meta {
+		py_int N, tstep;
+		py_float xlo[3], xhi[3];
+		std::string boxline;
+	};
+
+protected:
+	std::string last_line;
+	block_meta  last_meta;
 };
 
 
@@ -34,25 +60,62 @@ public:
 	enum FILE_FORMATS {
 		PLAIN   = 0,
 		GZIP    = 1,
-		ISTREAM = 2
+		ISTREAM = 2,
+		BIN     = 3
 	};
 	
 	enum DUMP_FORMATS {
 		LAMMPS  = 0,
-		GSD     = 1
+		GSD     = 1,
+		DCD     = 2
 	};
 
-	dump_reader( std::istream &stream, int dump_format );
-	dump_reader( const std::string &fname, int dump_format = LAMMPS,
-	             int file_format = PLAIN );
+	static const char *fformat_to_str( int file_format )
+	{
+		switch( file_format ){
+			default:
+				return "UNKNOWN!";
+			case PLAIN:
+				return "PLAIN TEXT";
+			case GZIP:
+				return "GZIPPED TEXT";
+			case ISTREAM:
+				return "INPUT STREAM";
+			case BIN:
+				return "BINARY";
+		}
+	}
+	static const char *dformat_to_str( int dformat )
+	{
+		switch( dformat ){
+			default:
+				return "UNKOWN!";
+			case LAMMPS:
+				return "LAMMPS";
+			case GSD:
+				return "GSD";
+			case DCD:
+				return "DCD";
+		}
+	}
+
+	dump_reader( std::istream &stream, int dformat = LAMMPS );
+	dump_reader( const std::string &fname );
+	
 
 	void setup_reader( std::istream &stream );
 	void setup_reader( const std::string &fname, int format );
 
 	void setup_interpreter( int dump_format );
-	
 
+	/// Tries to read in the next block from file. If successful,
+	/// returns true and block_data contains the next block.
+	/// Else returns false and block is unchanged.
 	virtual bool next_block( block_data &block );
+
+	/// To return read the last block in the file. If successful,
+	/// returns true and block_data contains the next block.
+	/// Else returns false and block_data is unchanged.
 	virtual bool last_block( block_data &block );
 	
 	virtual ~dump_reader();
@@ -62,10 +125,16 @@ public:
 		return !at_eof;
 	}
 
+	/// Fast-forward a number of blocks.
 	bool skip_blocks( int Nblocks );
+
+	/// Fast-forward one block.
 	bool skip_block ( );
 
+	/// Returns the number of blocks in the file.
 	std::size_t block_count();
+
+	/// Rewinds the file to the beginning.
 	
 private:
 
@@ -99,9 +168,9 @@ void dump_reader_get_block_data( dump_reader_handle *dh,
                                  py_int N, py_float *x, py_int *ids,
                                  py_int *types, py_int *mol );
 
+bool dump_reader_fast_forward( dump_reader_handle *dh,
+                               py_int N_blocks );
 
-// TODO: Think of a way to copy the data from the C++ side to Python...
-//       Maybe through a pipe? It's lame but works.
 	
 
 } // extern "C"

@@ -81,4 +81,23 @@ double var( const container_type &c )
 
 
 
+template <unsigned int bit, typename T> inline
+void set_bit( T& x )
+{
+	x |= (1u << (bit-1) );
+}
+
+template <unsigned int bit, typename T> inline
+void clear_bit( T& x )
+{
+	x &= ~(1u << (bit-1) );
+}
+
+template <unsigned int bit, typename T> inline
+bool is_bit( T& x )
+{
+	return x & (1u << (bit-1) );
+}
+
+
 #endif // UTIL_H

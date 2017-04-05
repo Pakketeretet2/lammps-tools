@@ -7,7 +7,7 @@ id_map::id_map( const arr1i &ids )
 	}
 }
 
-id_map::id_map( py_int *ids, py_int N )
+id_map::id_map( const py_int *ids, py_int N )
 {
 	for( uint i = 0; i < N; ++i ){
 		m[ids[i]] = i;

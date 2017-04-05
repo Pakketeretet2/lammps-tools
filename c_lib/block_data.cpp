@@ -1,5 +1,4 @@
 #include "block_data.h"
-
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -8,15 +7,17 @@ extern "C" {
 
 
 block_data::block_data() : x(nullptr), x_(nullptr), ids(nullptr),
-                           types(nullptr), mol(nullptr), N(0), tstep(0),
-                           xlo{0,0,0}, xhi{0,0,0}, periodic(0), boxline(""),
-                           atom_style(ATOMIC)
+                           types(nullptr), mol(nullptr), N(0),
+                           tstep(0), xlo{0,0,0}, xhi{0,0,0},
+                           periodic(0), atom_style(atom_styles::ATOMIC),
+                           boxline("       ")
 {}
 
 block_data::block_data( int N ) : x(nullptr), x_(nullptr), ids(nullptr),
-                                  types(nullptr), mol(nullptr), N(0), tstep(0),
-                                  xlo{0,0,0}, xhi{0,0,0}, periodic(0), boxline(""),
-                                  atom_style(ATOMIC)
+                                  types(nullptr), mol(nullptr), N(0),
+                                  tstep(0), xlo{0,0,0}, xhi{0,0,0},
+                                  periodic(0), atom_style(atom_styles::ATOMIC),
+                                  boxline("       ")
 {
 	init(N);
 }
@@ -105,9 +106,9 @@ void block_data_from_foreign( const void *x, py_int N, const py_int *ids,
 	std::copy( types, types + N, b.types );
 	if( mol ){
 		std::copy( mol, mol + N, b.mol );
-		b.atom_style = block_data::MOLECULAR;
+		b.atom_style = atom_styles::MOLECULAR;
 	}else{
-		b.atom_style = block_data::ATOMIC;
+		b.atom_style = atom_styles::ATOMIC;
 	}
 
 	b.periodic = periodic;
@@ -140,8 +141,10 @@ void copy( block_data &b, const block_data &source )
 	b.boxline = source.boxline;
 	b.periodic = source.periodic;
 
+	/*
 	std::cerr << "Copying " << source.other_cols.size()
 	          << " other cols as well...\n";
+	*/
 	
 	b.other_cols.resize( source.other_cols.size() );
 	for( int i = 0; i < b.other_cols.size(); ++i ){
@@ -157,7 +160,7 @@ void copy( block_data &b, const block_data &source )
 		b.ids[i]   = source.ids[i];
 		b.types[i] = source.types[i];
 
-		if( b.atom_style == block_data::MOLECULAR ){
+		if( b.atom_style == atom_styles::MOLECULAR ){
 			b.mol[i] = source.mol[i];
 		}
 

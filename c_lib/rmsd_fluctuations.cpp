@@ -21,12 +21,12 @@ py_float rmsd_fluctuations_impl( dump_reader &r, std::vector<std::array<double,4
 
 	// Sort by ids:
 	std::vector<std::array<double, 3> > x_avg( block.N );
-	id_map im0( block.ids, block.N ); // This gives you the indices at time step 0.
+	id_map im0( block.ids, block.N );
 	
 	std::vector<std::array<double, 3> > x_sor( block.N );
 	double alpha = 0.95;
 
-	for( int i = 0; i < block.N; ++i ){
+	for( py_int i = 0; i < block.N; ++i ){
 		x_avg[i][0] = block.x[i][0];
 		x_avg[i][1] = block.x[i][1];
 		x_avg[i][2] = block.x[i][2];
@@ -46,11 +46,11 @@ py_float rmsd_fluctuations_impl( dump_reader &r, std::vector<std::array<double,4
 		for( int i = 0; i < block.N; ++i ){
 			int id  = block.ids[i];
 			int idx = im0.id_to_index( id );
-
 			
 			x_sor[idx][0] = block.x[i][0];
 			x_sor[idx][1] = block.x[i][1];
 			x_sor[idx][2] = block.x[i][2];
+			
 			
 		}
 

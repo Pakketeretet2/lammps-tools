@@ -1,5 +1,5 @@
-"""! @package dumpreader
-This package contains functions for extracting dump files.
+"""! @package block_data
+This package contains definitions for block_data, which is atom info per time step
 
 \ingroup lammpstools
 """
@@ -9,6 +9,7 @@ import gzip
 import os
 import sys
 import copy
+from ctypes import *
 
 
 class domain_data:
@@ -40,6 +41,7 @@ class block_data:
             self.mol = None # np.zeros( meta.N, dtype = int )
         else:
             self.mol = mol
+            self.meta.atom_style = "molecular"
             
         self.other_cols = []
 
@@ -179,14 +181,14 @@ def block_to_dump_write(b, fname, write_mode = "w", file_mode = "plain"):
     print(b.meta.t, file = dump_file)
     print("ITEM: NUMBER OF ATOMS", file = dump_file)
     print(b.meta.N, file = dump_file)
-    print(b.meta.domain.box_line, file = dump_file)
+    print("ITEM: BOX BOUNDS", b.meta.domain.box_line, file = dump_file)
     print("%f  %f" % ( b.meta.domain.xlo[0], b.meta.domain.xhi[0] ), file = dump_file)
     print("%f  %f" % ( b.meta.domain.xlo[1], b.meta.domain.xhi[1] ), file = dump_file)
     print("%f  %f" % ( b.meta.domain.xlo[2], b.meta.domain.xhi[2] ), file = dump_file)
 
     if b.meta.atom_style == "atomic":
         atom_string = "ITEM: ATOMS id type x y z"
-    elif b.meta.atom_style == "molecule":
+    elif b.meta.atom_style == "molecular":
         atom_string = "ITEM: ATOMS id mol type x y z"
     
     for c in b.other_cols:
@@ -199,7 +201,7 @@ def block_to_dump_write(b, fname, write_mode = "w", file_mode = "plain"):
         #                                b.x[i][0], b.x[i][1], b.x[i][2])
         if b.meta.atom_style == "atomic":
             print(b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2], end = "", file = dump_file)
-        elif b.meta.atom_style == "molecule":
+        elif b.meta.atom_style == "molecular":
             print(b.ids[i], b.mol[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2], end = "", file = dump_file)
 
 
@@ -250,7 +252,8 @@ def block_to_data(b,fname, overwrite = False):
             print("%d %d %d %f %f %f" % (b.ids[i], b.mol[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2]), file = f )
     else:
         for i in range(0,b.meta.N):
-            print("%d %d %f %f %f" % (b.ids[i], b.types[i], b.x[i][0], b.x[i][1], b.x[i][2]), file = f )
+
+            print("%d %d %f %f %f" % (b.ids[i], b.types[i], b.x[i,0], b.x[i,1], b.x[i,2]), file = f )
     
 
 
@@ -307,3 +310,61 @@ def copy_meta_new_block( b_old, Xnew, id_new = None, type_new = None, mol_new = 
     bb = block_data( bm, ids, types, X, mol )
     return bb
 
+
+def block_data_from_foreign( X, ids, types, mol, periodic, xlo, xhi,
+                             dims, tstep, boxline ):
+    """! Constructs a block_data object from given arrays. """
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+
+    N    = len(X)
+    dom  = block_data.domain_data( xlo, xhi, periodic, boxline )
+    meta = block_data.block_meta( 0, N, dom )
+    b    = block_data.block_data( meta, ids, types, X, mol )
+    return b
+
+def blocks_from_xyz( fname, pad = None, xxlo = None, xxhi = None ):
+    """! Constructs a list of block_datas from a given xyz file. """
+
+    blocks = []
+    if pad is None:
+        pad = 2
+
+    tstep = 0
+    with open(fname,"r") as f:
+        for l in f:
+            l = l.rstrip()
+            N = int(l)
+            X     = np.zeros( [N,3] )
+            ids   = np.array( [ i for i in range(1,N+1) ], dtype = int )
+            types = np.ones( N, dtype = int )
+            l = f.readline()
+            xlo = np.zeros(3)
+            xhi = np.zeros(3)
+        
+            for i in range(0,N):
+                l = f.readline()
+                l = l.rstrip()
+                w = l.split()
+
+                X[i][0] = float(w[1])
+                X[i][1] = float(w[2])
+                X[i][2] = float(w[3])
+
+                for k in range(0,3):
+                    if X[i][k] < xlo[k]:
+                        xlo[k] = X[i][k]
+                    elif X[i][k] > xhi[k]:
+                        xhi[k] = X[i][k]
+
+            xlo -= pad
+            xhi += pad
+            if not xxlo is None:
+                xlo = xxlo
+            if not xxhi is None:
+                xhi = xxhi
+            dom  = domain_data( xlo, xhi, 0, "ITEM: BOX BOUNDS ff ff ff" )
+            meta = block_meta( tstep, N, dom )
+            b    = block_data( meta, ids, types, X, None )
+            blocks.append(b)
+            tstep += 1
+    return blocks

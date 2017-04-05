@@ -23,14 +23,26 @@ struct dump_col
 	
 };
 
+enum atom_styles {
+	ATOMIC,
+	MOLECULAR
+};
+	
+struct block_meta {
+
+	block_meta() : N(0), tstep(0), atom_style(atom_styles::ATOMIC),
+	               periodic(0), xlo{0,0,0}, xhi{0,0,0}, boxline(7,' ')
+	{}
+	py_int N, tstep;
+	py_int atom_style;
+	py_int periodic;
+	py_float xlo[3], xhi[3];
+	std::string boxline;
+};
+
 
 struct block_data
 {
-	enum atom_styles {
-		ATOMIC,
-		MOLECULAR
-	};
-	
 	py_float **x;
 	py_float *x_;
 	py_int *ids, *types;
@@ -39,7 +51,6 @@ struct block_data
 
 	py_float xlo[3], xhi[3];
 	py_int periodic;
-
 	py_int atom_style;
 
 	std::string boxline;
@@ -52,7 +63,7 @@ struct block_data
 	
 	void resize( int N );
 	void init( int N );
-	
+
 private:
 	void delete_members();
 };

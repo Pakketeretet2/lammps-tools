@@ -8,12 +8,21 @@
 #  include <boost/iostreams/filter/gzip.hpp>
 #endif // HAVE_BOOST_GZIP
 
+#ifdef HAVE_BOOST_GZIP
 reader_core_gzip::reader_core_gzip( const std::string &fname )
 	: infile( fname, std::ios_base::in | std::ios_base::binary )
 {
 	in.push( boost::iostreams::gzip_decompressor() );
 	in.push( infile );
 }
+#else
+
+reader_core_gzip::reader_core_gzip( const std::string &fname )
+{
+	std::cerr << "Cannot use gzip files without boost_gzip support!\n";
+	std::terminate();
+}
+#endif // HAVE_BOOST_GZIP
 
 reader_core_gzip::~reader_core_gzip()
 {}
