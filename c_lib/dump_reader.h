@@ -23,7 +23,6 @@ public:
 	
 	virtual bool getline( std::string &line );
 	virtual void rewind();
-
 };
 
 
@@ -107,6 +106,7 @@ public:
 	void setup_reader( const std::string &fname, int format );
 
 	void setup_interpreter( int dump_format );
+	void setup_interpreter_gsd( const std::string &fname );
 
 	/// Tries to read in the next block from file. If successful,
 	/// returns true and block_data contains the next block.

@@ -15,6 +15,7 @@
 
 #include "dump_interpreter_lammps.h"
 #include "dump_interpreter_dcd.h"
+#include "dump_interpreter_gsd.h"
 
 
 struct dummy_stream
@@ -107,12 +108,12 @@ bool dump_interpreter::last_block( reader_core *r, block_data &block )
 
 
 // ***************** DUMPREADER STUFF ********************
-dump_reader::dump_reader( std::istream &stream, int dformat ) : dump_format( dformat )
+dump_reader::dump_reader( std::istream &stream, int dformat ) :
+	dump_format( dformat ), at_eof(false)
 {
 	file_format = ISTREAM;
 	dump_format = dformat;
 	setup_interpreter( dump_format );
-	
 	setup_reader( stream );
 }
 
@@ -146,8 +147,17 @@ dump_reader::dump_reader( const std::string &fname ) : dump_format( -1 ),
 	          << dump_format << " ( "
 	          << dump_reader::dformat_to_str(dump_format) << " ).\n";
 
-	setup_interpreter( dump_format );
-	setup_reader( fname, file_format );
+	if( dump_format != GSD ){
+		setup_interpreter( dump_format );
+		setup_reader( fname, file_format );
+	}else if( dump_format == GSD ){
+		setup_interpreter_gsd( fname );
+		reader = nullptr; // gsd uses it's own reader.
+	}else{
+		std::cerr << "Dunno what to do with dump format "
+		          << dump_format << "!\n";
+		std::terminate();
+	}
 }
 
 
@@ -190,10 +200,6 @@ void dump_reader::setup_interpreter( int dump_format )
 {
 	if( dump_format == LAMMPS ){
 		interp = new dump_interpreter_lammps();
-	}else if( dump_format == GSD ){
-		// interp = new dump_interpreter_gsd();
-		std::cerr << "GSD not supported yet!\n";
-		std::terminate();
 	}else if( dump_format == DCD ){
 		std::cerr << "Creating dcd interpreter.\n";
 		interp = new dump_interpreter_dcd();
@@ -203,6 +209,10 @@ void dump_reader::setup_interpreter( int dump_format )
 	}
 }
 
+void dump_reader::setup_interpreter_gsd( const std::string &fname )
+{
+	interp = new dump_interpreter_gsd( fname );
+}
 
 
 

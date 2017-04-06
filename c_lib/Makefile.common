@@ -49,6 +49,8 @@ endif
 
 ifeq ($(HAVE_LIB_GSD), 1)
 	FLAGS += -DHAVE_GSD
+	INC   += -I./gsd/
+	LNK   += -L./gsd -lgsd
 endif
 
 ifeq ($(HAVE_BOOST_GZIP), 1)
@@ -77,5 +79,3 @@ MAKE_DIR = mkdir -p $(1)
 S=/
 
 LIB_DIR=/usr/local/lib
-
-

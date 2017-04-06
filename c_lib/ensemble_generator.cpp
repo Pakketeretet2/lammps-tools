@@ -167,9 +167,9 @@ void ensemble_generate_impl( arr3f &x, py_int N, arr1i &ids, arr1i &types,
 	}
 
 	// Init the manifold now.
-	*ptr_m->get_params() = new double[ptr_m->nparams()];
+	ptr_m->params = new double[ptr_m->nparams()];
 	for( int i = 0; i < man_narg; ++i ){
-		(*ptr_m->get_params())[i] = std::stof( man_arg_arr[i] );
+		ptr_m->params[i] = std::stof( man_arg_arr[i] );
 	}
 	ptr_m->post_param_init();
 	
