@@ -8,6 +8,7 @@ FLAGS = -std=c++11 -g -pedantic -frounding-math -shared -fPIC -g \
 PY_DIR     = "/usr/include/python2.7/"
 LAMMPS_DIR = "/home/stefan/projects/lammps-mine/src/"
 TIMER_DIR  = "$(HOME)/projects/my_timer/lib/"
+GSD_DIR    = "/usr/local/lib/"
 
 LNK = -L./ -L$(TIMER_DIR) -lm -larmadillo -lpython2.7
 INC = -I./ -I$(PY_DIR) -I$(TIMER_DIR)
@@ -50,7 +51,7 @@ endif
 ifeq ($(HAVE_LIB_GSD), 1)
 	FLAGS += -DHAVE_GSD
 	INC   += -I./gsd/
-	LNK   += -L./gsd -lgsd
+	LNK   += -L./gsd -L$(GSD_DIR) -lgsd
 endif
 
 ifeq ($(HAVE_BOOST_GZIP), 1)
