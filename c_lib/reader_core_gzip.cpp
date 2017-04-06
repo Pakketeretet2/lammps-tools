@@ -1,6 +1,7 @@
 #include "reader_core_gzip.h"
 
 #include <fstream>
+#include <iostream>
 
 #ifdef HAVE_BOOST_GZIP
 #  include <boost/iostreams/filtering_stream.hpp>
@@ -17,7 +18,7 @@ reader_core_gzip::reader_core_gzip( const std::string &fname )
 }
 #else
 
-reader_core_gzip::reader_core_gzip( const std::string &fname )
+reader_core_gzip::reader_core_gzip( const std::string &fname ) : in(std::cin)
 {
 	std::cerr << "Cannot use gzip files without boost_gzip support!\n";
 	std::terminate();
