@@ -82,6 +82,28 @@ void print_block_data_lmp( const block_data &b, const std::string &s,
 
 void print_block_data_lmp( const block_data &b, std::ostream &o )
 {
+	o << "ITEM: TIMESTEP\n" << b.tstep << "\n";
+	o << "ITEM: NUMBER OF ATOMS\n" << b.N << "\n";
+	o << b.boxline << "\n";
+	o << b.xlo[0] << " " << b.xhi[0] << "\n";
+	o << b.xlo[1] << " " << b.xhi[1] << "\n";
+	o << b.xlo[2] << " " << b.xhi[2] << "\n";
+
+	if( b.atom_style == atom_styles::MOLECULAR ){
+		o << "ITEM: ATOMS id mol type x y z\n";
+		for( py_int i = 0; i < b.N; ++i ){
+			o << b.ids[i] << " " << b.mol[i] << " " << b.types[i]
+			  << " " << b.x[i][0] << " " << b.x[i][1] << " "
+			  << b.x[i][2] << "\n";
+		}
+	}else{
+		o << "ITEM: ATOMS id type x y z\n";
+		for( py_int i = 0; i < b.N; ++i ){
+			o << b.ids[i] << " " << b.types[i]
+			  << " " << b.x[i][0] << " " << b.x[i][1] << " "
+			  << b.x[i][2] << "\n";
+		}
+	}
 	
 }
 
@@ -167,8 +189,67 @@ void copy( block_data &b, const block_data &source )
 		for( std::size_t j = 0; j < source.other_cols.size(); ++j ){
 			b.other_cols[j].data[i] = source.other_cols[j].data[i];
 		}
+	}	
+}
+
+
+extern "C" {
+
+block_data *new_block_data()
+{
+	block_data *b = new block_data();
+	std::cerr << "Made block data at " << b << ".\n";
+	return b;
+}
+	
+void set_block_data( block_data *b,
+                     py_int N, py_int t, py_float *x, py_int *ids,
+                     py_int *types, py_int *mol,
+                     py_float *xlo, py_float *xhi, py_int periodic,
+                     const char* boxline )
+{
+	std::cerr << "Setting block data on block at " << b << ".\n";
+	b->N = N;
+	b->tstep = t;
+
+	b->xlo[0] = xlo[0];
+	b->xlo[1] = xlo[1];
+	b->xlo[2] = xlo[2];
+
+	b->xhi[0] = xhi[0];
+	b->xhi[1] = xhi[1];
+	b->xhi[2] = xhi[2];
+
+	b->boxline = boxline;
+	b->resize(N);
+	
+	std::cerr << "Boxline is " << boxline << "\n";
+	std::cerr << "Resized block data at " << b << " to N = " << N << ".\n";
+
+	for( int i = 0; i < N; ++i ){
+		
+		b->x[i][0]  = x[ 3*i + 0 ];
+		b->x[i][1]  = x[ 3*i + 1 ];
+		b->x[i][2]  = x[ 3*i + 2 ];
+		
+		b->ids[i]   = ids[i];
+		b->types[i] = types[i];
+
+		if( mol ){
+			b->mol[i] = mol[i];
+		}
 	}
 
-
+	std::cerr << "After setting, this is block_data:\n";
+	print_block_data_lmp( *b, std::cerr );
 	
+	
+}
+	
+void free_block_data( block_data *b )
+{
+	std::cerr << "Freeing block data at " << b << ".\n";
+	delete b;
+}
+
 }

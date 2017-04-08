@@ -314,7 +314,6 @@ def copy_meta_new_block( b_old, Xnew, id_new = None, type_new = None, mol_new = 
 def block_data_from_foreign( X, ids, types, mol, periodic, xlo, xhi,
                              dims, tstep, boxline ):
     """! Constructs a block_data object from given arrays. """
-    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
 
     N    = len(X)
     dom  = block_data.domain_data( xlo, xhi, periodic, boxline )
@@ -368,3 +367,36 @@ def blocks_from_xyz( fname, pad = None, xxlo = None, xxhi = None ):
             blocks.append(b)
             tstep += 1
     return blocks
+
+
+def new_block_data_cpp( b ):
+    """! Creates a C++-style block_data struct and returns the handle to it. """
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+    bh = lammpstools.new_block_data()
+
+    if b.mol is None:
+        molref = None
+    else:
+        molref = b.mol.ctypes.data_as(POINTER(c_longlong))
+        
+    boxline_buff = create_string_buffer( b.meta.domain.box_line.encode('utf-8') )
+
+    lammpstools.set_block_data( bh, b.meta.N, b.meta.t,
+                                b.x.ctypes.data_as(POINTER(c_double)),
+                                b.ids.ctypes.data_as(POINTER(c_longlong)),
+                                b.types.ctypes.data_as(POINTER(c_longlong)),
+                                molref,
+                                b.meta.domain.xlo.ctypes.data_as(POINTER(c_double)),
+                                b.meta.domain.xhi.ctypes.data_as(POINTER(c_double)),
+                                b.meta.domain.periodic, boxline_buff )
+    
+    
+    return bh
+
+        
+def free_block_data_cpp( bh ):
+    """! Deletes a C++-style block_data struct. """
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+    lammpstools.free_block_data( bh )
+    
+        
