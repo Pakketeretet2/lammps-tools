@@ -17,7 +17,7 @@ from block_data import *
 
 class dumpreader:
     def __init__(self,fname,quiet = True, id_tag = 'id', type_tag = 'type',
-                 x_tag = 'x', y_tag = 'y', z_tag = 'z', mol_tag = 'mol'):
+                 mol_tag = 'mol'):
         """! Initializes dumpreader with given dump file.
 
         @param fname Name of dump file to read.
@@ -30,10 +30,15 @@ class dumpreader:
         self.last_block   = None
         self.id_tag       = id_tag
         self.type_tag     = type_tag
-        self.x_tag        = x_tag
-        self.y_tag        = y_tag
-        self.z_tag        = z_tag
+        self.x_tag        = None
+        self.y_tag        = None
+        self.z_tag        = None
         self.fname        = fname
+
+        self.x_tags = [ 'x', 'xs', 'xu' ]
+        self.y_tags = [ 'y', 'ys', 'yu' ]
+        self.z_tags = [ 'z', 'zs', 'zu' ]
+        
 
         self.scaled_x     = False
         self.scaled_y     = False
@@ -42,10 +47,6 @@ class dumpreader:
         self.molecules    = False
         self.mol_tag      = mol_tag
 
-        if x_tag == 'xs': self.scaled_x = True
-        if y_tag == 'ys': self.scaled_y = True
-        if z_tag == 'zs': self.scaled_z = True
-        
         if not os.path.isfile(fname):
             print("File %s does not exist!" % fname, file = sys.stderr)
             self.bad_file = 1
@@ -132,6 +133,12 @@ class dumpreader:
                 print("line '", line, "' not recognized! Returning None!", file = sys.stderr )
                 return None, None
 
+            if self.x_tag == 'xs': self.scaled_x = True
+            if self.y_tag == 'ys': self.scaled_y = True
+            if self.z_tag == 'zs': self.scaled_z = True
+        
+
+
             line = self.dump_file.readline().rstrip()
         return None, None
             
@@ -178,12 +185,40 @@ class dumpreader:
                 i_idx = i - 2
             elif w == self.type_tag:
                 t_idx = i - 2
-            elif w == self.x_tag:
-                x_idx = i - 2
-            elif w == self.y_tag:
-                y_idx = i - 2
-            elif w == self.z_tag:
-                z_idx = i - 2
+
+            elif w in self.x_tags:
+                if self.x_tag is None:
+                    self.x_tag = w
+                    x_idx = i - 2
+                else:
+                    if self.x_tag != w:
+                        print("x tag changed during dump!", file = sys.stderr)
+                        return None
+                    else:
+                        x_idx = i-2
+
+            elif w in self.y_tags:
+                if self.y_tag is None:
+                    self.y_tag = w
+                    y_idx = i - 2
+                else:
+                    if self.y_tag != w:
+                        print("y tag changed during dump!", file = sys.stderr)
+                        return None
+                    else:
+                        y_idx = i-2
+                        
+            elif w in self.z_tags:
+                if self.z_tag is None:
+                    self.z_tag = w
+                    z_idx = i - 2
+                else:
+                    if self.z_tag != w:
+                        print("z tag changed during dump!", file = sys.stderr)
+                        return None
+                    else:
+                        z_idx = i-2
+
             elif w == self.mol_tag:
                 mol_idx = i - 2
                 self.molecules = True

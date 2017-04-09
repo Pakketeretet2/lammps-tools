@@ -144,4 +144,22 @@ block_data filter_block_by_indices( block_data b, const container &indices )
 
 
 
+// For some python functions that want to pass around a C++-type
+// block_data directly to C++ functions.
+extern "C" {
+
+block_data *new_block_data();
+void set_block_data( block_data *b,
+                     py_int N, py_int t, py_float *x, py_int *ids,
+                     py_int *types, py_int *mol,
+                     py_float *xlo, py_float *xhi, py_int periodic,
+                     const char* boxline );
+void free_block_data( block_data * );
+
+}
+
+
+
+
+
 #endif // BLOCK_DATA_H
