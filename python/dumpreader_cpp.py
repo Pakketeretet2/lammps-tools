@@ -20,12 +20,14 @@ class dumpreader_cpp:
     def __init__(self, fname ):
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
         self.handle = lammpstools.get_dump_reader_handle( fname.encode() )
-        print("Opened dump reader handle @ ", hex(self.handle))
+        print("Opened dump reader handle @ ", hex(self.handle),
+              file = sys.stderr)
         self.at_eof = False
 
     def __del__(self):
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
-        print("Releasing dump reader handle @ ", hex(self.handle))
+        print("Releasing dump reader handle @ ", hex(self.handle),
+              file = sys.stderr)
         lammpstools.release_dump_reader_handle( self.handle )
 
     def __iter__(self):

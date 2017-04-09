@@ -133,6 +133,7 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
     
     try:
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+        pname_buffer = create_string_buffer( pname.encode('utf-8') )
 
         def start_neigh():
             # Make the child neighborize while the main thread reads from the pipe
@@ -141,7 +142,7 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
                                     c_double(rc), c_longlong(b.meta.domain.periodic),
                                     void_ptr(b.meta.domain.xlo),
                                     void_ptr(b.meta.domain.xhi), c_longlong(dims),
-                                    c_longlong(method), c_char_p(pname),
+                                    c_longlong(method), pname_buffer,
                                     c_longlong(itype), c_longlong(jtype))
 
         p = Process(target = start_neigh)
@@ -155,14 +156,17 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
         i = 0
 
         with open(pname,"rb") as fifo:
+            byte = b'        '
             while True:
-                b.meta.te = fifo.read(int_size)
-                if b.meta.te == '':
+                byte = fifo.read(int_size)
+                
+                if byte == '' or byte == b'':
                     # Out of data apparently.
                     break;
 
-                x = struct.unpack(int_fmt,b.meta.te)[0]
+                x = struct.unpack(int_fmt,byte)[0]
                 ints_read += 1
+            
                 if x > 0:
                     current_l.append(x)
                 else:
