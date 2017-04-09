@@ -1,4 +1,4 @@
-# First set some options:
+## Change these options to whatever works for your system/setup:
 # For delaunay triangulations:
 HAVE_LIB_CGAL = 0
 # For more output:
