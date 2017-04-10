@@ -223,8 +223,10 @@ void set_block_data( block_data *b,
 	b->boxline = boxline;
 	b->resize(N);
 	
-	std::cerr << "Boxline is " << boxline << "\n";
-	std::cerr << "Resized block data at " << b << " to N = " << N << ".\n";
+	/*
+	  std::cerr << "Boxline is " << boxline << "\n";
+	  std::cerr << "Resized block data at " << b << " to N = " << N << ".\n";
+	*/
 
 	for( int i = 0; i < N; ++i ){
 		
@@ -240,8 +242,10 @@ void set_block_data( block_data *b,
 		}
 	}
 
-	std::cerr << "After setting, this is block_data:\n";
-	print_block_data_lmp( *b, std::cerr );
+	/*
+	  std::cerr << "After setting, this is block_data:\n";
+	  print_block_data_lmp( *b, std::cerr );
+	*/
 	
 	
 }

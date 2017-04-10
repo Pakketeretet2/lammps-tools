@@ -133,7 +133,7 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
     
     try:
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
-        pname_buffer = create_string_buffer( pname.encode('utf-8') )
+        pname_buffer = create_string_buffer( pname.encode('ascii') )
 
         def start_neigh():
             # Make the child neighborize while the main thread reads from the pipe

@@ -379,7 +379,7 @@ def new_block_data_cpp( b ):
     else:
         molref = b.mol.ctypes.data_as(POINTER(c_longlong))
         
-    boxline_buff = create_string_buffer( b.meta.domain.box_line.encode('utf-8') )
+    boxline_buff = create_string_buffer( b.meta.domain.box_line.encode('ascii') )
 
     lammpstools.set_block_data( bh, b.meta.N, b.meta.t,
                                 b.x.ctypes.data_as(POINTER(c_double)),
@@ -399,4 +399,37 @@ def free_block_data_cpp( bh ):
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     lammpstools.free_block_data( bh )
     
+
+def write_block_data( b, file_name, file_format, data_format ):
+    """! Writes given block_data to specified file and format.
+    @param b            Block data to write.
+    @param fname        File name to write to.
+    @param file_format  File format to write. Currently supported:
+                        'PLAIN', 'GZIP', 'BIN'
+    @param data_format  Data format to write. Currently supported:
+                        'LAMMPS', 'HOOMD'
+    """
+
+    bh = new_block_data_cpp( b )
+    try:
+        lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+        fformat = file_format.encode( 'ascii' )
+        dformat = data_format.encode( 'ascii' )
+        fname   = file_name.encode( 'ascii' )
         
+        lammpstools.write_block_to_file( bh, c_char_p(fname), fformat, dformat )
+                                         
+        
+        
+    finally:
+        free_block_data_cpp( bh )
+    
+                      
+def write_block_data_cpp( bh, fname, file_format, data_format ):
+    """! Writes given C++-style block data handle to specified file and format.
+    @param b            
+    @param fname        
+    @param file_format  
+    @param data_format  
+    """
+    

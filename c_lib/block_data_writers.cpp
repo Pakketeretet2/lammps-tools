@@ -1,7 +1,14 @@
 #include "block_data_writers.h"
-
 #include "gsd/gsd.h"
 
+#include <fstream>
+
+
+void write_block_lammps_dump( const block_data &b, const std::string &fname )
+{
+	std::ofstream o( fname );
+	write_block_lammps_dump( b, o );
+}
 
 
 void write_block_lammps_dump( const block_data &b, std::ostream &o )
@@ -119,3 +126,21 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 	delete [] types;
 
 }
+
+
+extern "C" {
+	
+void write_block_to_file( const block_data *bh, const char *fname,
+                          const char *fformat, const char *dformat )
+{
+	std::string data_format( dformat );
+	std::string file_format( fformat );
+
+	std::cerr << "Writing block data at " << bh << " to " << fname << "\n";
+	std::cerr << "File format is " << file_format << " and Data format is "
+	          << data_format << ".\n";
+	
+	
+}
+
+} // extern "C"

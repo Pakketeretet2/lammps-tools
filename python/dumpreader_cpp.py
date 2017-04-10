@@ -106,7 +106,7 @@ class dumpreader_cpp:
                                                 byref(periodic),
                                                 box_line_buff,
                                                 byref(atom_style) )
-        box_line = str( box_line_buff, 'utf-8' )
+        box_line = str( box_line_buff, 'ascii' )
         
         x     = np.empty( [N.value, 3], dtype = float )
         ids   = np.empty( N.value, dtype = int )
