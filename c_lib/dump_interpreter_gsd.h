@@ -10,11 +10,22 @@
 
 #include "gsd/gsd.h"
 
+template <typename data_type>
+union gsd_utf8_char_templ
+{
+	data_type s;
+	char c[sizeof(data_type)];
+};
+
+typedef gsd_utf8_char_templ<char> gsd_utf8_char;
+
 
 // A dump interpreter for the HOOMD-blue GSD schema.
 class dump_interpreter_gsd : public dump_interpreter
 {
 public:
+	enum { TYPE_BUFFER_SIZE = 64 };
+	
 	dump_interpreter_gsd( const std::string &fname );
 	virtual ~dump_interpreter_gsd();
 	virtual bool next_block( reader_core *r, block_data &b );

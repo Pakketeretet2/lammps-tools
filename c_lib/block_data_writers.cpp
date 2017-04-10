@@ -1,7 +1,11 @@
 #include "block_data_writers.h"
 #include "gsd/gsd.h"
+#include "dump_interpreter_gsd.h"
 
 #include <fstream>
+
+
+
 
 
 void write_block_lammps_dump( const block_data &b, const std::string &fname )
@@ -90,22 +94,22 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 
 	status = gsd_write_chunk( gh, "configuration/step", GSD_TYPE_UINT64,
 	                          1, 1, 0, &step );
-	std::cerr << "( " << status << " ): Wrote step to file.\n";
+	//std::cerr << "( " << status << " ): Wrote step to file.\n";
 	status = gsd_write_chunk( gh, "configuration/dimensions", GSD_TYPE_UINT8,
 	                          1, 1, 0, &dims );
-	std::cerr << "( " << status << " ): Wrote dims to file.\n";
+	//std::cerr << "( " << status << " ): Wrote dims to file.\n";
 	status = gsd_write_chunk( gh, "configuration/box", GSD_TYPE_FLOAT,
 	                          6, 1, 0, box );
-	std::cerr << "( " << status << " ): Wrote box to file.\n";
+	//std::cerr << "( " << status << " ): Wrote box to file.\n";
 	status = gsd_write_chunk( gh, "particles/N", GSD_TYPE_UINT32,
 	                          1, 1, 0, &N );
-	std::cerr << "( " << status << " ): Wrote N to file.\n";
+	//std::cerr << "( " << status << " ): Wrote N to file.\n";
 
 
 	// float    *xx     = new float[3*N];
 	float    *x     = new float[3*N];
 	uint32_t *types	= new uint32_t[N];
-
+	int n_types = 0;
 	
 	
 	for( int i = 0; i < N; ++i ){
@@ -130,20 +134,46 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 			
 			x[3*j+d] = xi[d];
 		}
-		types[j] = b.types[i];
+		int current_type = b.types[i];
+		types[j] = current_type - 1;
+		if( current_type > n_types ) n_types = current_type;
+		
 	}
 	status = gsd_write_chunk( gh, "particles/position", GSD_TYPE_FLOAT,
 	                          N, 3, 0, x );
-	std::cerr << "( " << status << " ): Wrote x to file.\n";
+	//std::cerr << "( " << status << " ): Wrote x to file.\n";
 	status = gsd_write_chunk( gh, "particles/typeid", GSD_TYPE_UINT32,
 	                          N, 1, 0, types );
-	std::cerr << "( " << status << " ): Wrote types to file.\n";
-
+	//std::cerr << "( " << status << " ): Wrote type ids to file.\n";
+	
+	// Write the actual type names.
+	const uint buff_size = dump_interpreter_gsd::TYPE_BUFFER_SIZE;
+	gsd_utf8_char *type_names = new gsd_utf8_char[buff_size * n_types]();
+	//std::cerr << "gsd utf-8 char is " << sizeof(gsd_utf8_char) << " bytes.\n";
+	
+	for( int t = 0; t < n_types; ++t ){
+		gsd_utf8_char * current_name = type_names + t*buff_size;
+		std::string number = "haha wtf man " + std::to_string( t+1 );
+		int idx;
+		for( idx = 0; idx < number.length(); ++idx ){
+			current_name[idx].c[0] = number[idx];
+		}
+		current_name[idx].c[0] = '\0';
+		/*
+		std::cerr << "Setting name " << t+1 << " to ";
+		for( int i = 0; i < idx; ++i ){
+			std::cerr << current_name[i].c[0];
+		}
+		std::cerr << "\n";
+		*/
+	}
+	status = gsd_write_chunk( gh, "particles/types", GSD_TYPE_UINT8,
+	                          n_types, buff_size, 0, type_names );
 	status = gsd_end_frame( gh );
 
 	delete [] x;
 	delete [] types;
-
+	delete [] type_names;
 }
 
 
@@ -154,7 +184,7 @@ void write_block_to_file( const block_data *bh, const char *fname,
 {
 	std::string data_format( dformat );
 	std::string file_format( fformat );
-
+	
 	std::cerr << "Writing block data at " << bh << " to " << fname << "\n";
 	std::cerr << "File format is " << file_format << " and Data format is "
 	          << data_format << ".\n";

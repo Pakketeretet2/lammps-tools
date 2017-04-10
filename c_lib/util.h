@@ -99,5 +99,16 @@ bool is_bit( T& x )
 	return x & (1u << (bit-1) );
 }
 
+inline bool is_non_negative( const std::string &s )
+{
+	int i = 0;
+	while( s[i] ){
+		if( !std::isdigit( s[i] ) ){
+			return false;
+		}
+	}
+	return true;
+}
+
 
 #endif // UTIL_H

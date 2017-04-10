@@ -1,6 +1,8 @@
 #include "dump_interpreter_gsd.h"
+#include "util.h"
 
 #include <iostream>
+
 
 #define MY_CERR std::cerr << status << " ( " << gh << " ) "
 
@@ -91,17 +93,55 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 	
 	b.resize(N);
 
-	float *x        = new float[3*N];
-	uint32_t *types = new uint32_t[N];
+	float *x           = new float[3*N];
+	uint32_t *type_ids = new uint32_t[N];
+	
 
 	status = get_chunk_data( "particles/position", x );
-	status = get_chunk_data( "particles/typeid",   types );
+	status = get_chunk_data( "particles/typeid",  type_ids );
+	
+	
 	if( status == 1 ){
 		// This means types was not in the file. Probably because
 		// everything is the default 1.
 		std::cerr << "Didn't find particles/typeid!\n";
 		default_type = true;
 	}
+
+	if( !default_type ){
+		// At this point you know the type ids. Count them:
+		int n_types = 0;
+		for( int i = 0; i < N; ++i ){
+			int type_id_inc = type_ids[i]+1;
+			if( type_id_inc > n_types ) n_types = type_id_inc;
+		}
+		/*
+		std::cerr << "Found " << n_types << " particle types. "
+		          << "Reading in type names...\n";
+		*/
+		constexpr int buff_size = TYPE_BUFFER_SIZE;
+		gsd_utf8_char *type_names = new gsd_utf8_char[ n_types * buff_size ];
+		
+		status = get_chunk_data( "particles/types", type_names );
+		for( int i = 0; i < n_types; ++i ){
+			gsd_utf8_char *name_i = type_names + i*buff_size;
+			char name_buffer[buff_size];
+			int j = 0;
+			while( name_i[j].c[0] ){
+				name_buffer[j] = name_i[j].c[0];
+				++j;
+			}
+			name_buffer[j] = '\0';
+			std::string name = name_buffer;
+			
+			//std::cerr << "Name " << i+1 << " = " << name << "\n";
+		}
+
+		
+
+		delete [] type_names;
+	}
+	
 
 	// MY_CERR << "Read positions and types.\n";
 	for( int i = 0; i < N; ++i ){
@@ -115,7 +155,10 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 
 	if( !default_type ){
 		for( int i = 0; i < N; ++i ){
-			b.types[i] = types[i];
+			// Reconstruct the type as an integer rather than
+			// the named type. I am not happy about this loss
+			// of info, but ok.
+			b.types[i] = type_ids[i] + 1;
 		}
 	}else{
 		for( int i = 0; i < N; ++i ){
@@ -127,7 +170,7 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 	b.boxline = "ITEM: BOX BOUNDS pp pp pp";
 
 	delete [] x;
-	delete [] types;
+	delete [] type_ids;
 	
 	return true;
 	

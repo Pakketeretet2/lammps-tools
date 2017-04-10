@@ -11,3 +11,6 @@ b = d.getblock()
 block_data.write_block_data( b, "test.gsd",  "BIN",   "HOOMD" )
 block_data.write_block_data( b, "test.dump", "PLAIN", "LAMMPS" )
 
+d = dumpreader.dumpreader_cpp( "test.gsd" )
+b = d.getblock()
+
