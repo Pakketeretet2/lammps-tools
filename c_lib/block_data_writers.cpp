@@ -104,7 +104,6 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 
 	// float    *xx     = new float[3*N];
 	float    *x     = new float[3*N];
-	
 	uint32_t *types	= new uint32_t[N];
 
 	

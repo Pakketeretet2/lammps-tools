@@ -88,10 +88,6 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 	b.xhi[0] =  0.5*box[0];
 	b.xhi[1] =  0.5*box[1];
 	b.xhi[2] =  0.5*box[2];
-
-	std::cerr << b.xlo[0] << " " << b.xlo[1] << " " << b.xlo[2] << "\n";
-	std::cerr << b.xhi[0] << " " << b.xhi[1] << " " << b.xhi[2] << "\n";
-	
 	
 	b.resize(N);
 
@@ -103,6 +99,7 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 	if( status == 1 ){
 		// This means types was not in the file. Probably because
 		// everything is the default 1.
+		std::cerr << "Didn't find particles/typeid!\n";
 		default_type = true;
 	}
 
@@ -116,7 +113,7 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 		
 	}
 
-	if( default_type ){
+	if( !default_type ){
 		for( int i = 0; i < N; ++i ){
 			b.types[i] = types[i];
 		}
