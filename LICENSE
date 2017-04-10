@@ -1,4 +1,9 @@
-This is free and unencumbered software released into the public domain.
+This is free and unencumbered software released into the public domain,
+with the exception of the gsd implementation which is distributed under
+the two-clause BSD license. See c_lib/gsd/LICENSE for its own license
+file.
+
+The rest of this software is covered by the unlicense:
 
 Anyone is free to copy, modify, publish, use, compile, sell, or
 distribute this software, either in source code form or as a compiled

@@ -27,7 +27,7 @@ enum gsd_type
     GSD_TYPE_INT32,
     GSD_TYPE_INT64,
     GSD_TYPE_FLOAT,
-    GSD_TYPE_DOUBLE
+    GSD_TYPE_DOUBLE,
     };
 
 //! Flag for GSD file open options
