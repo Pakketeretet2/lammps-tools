@@ -402,6 +402,18 @@ def free_block_data_cpp( bh ):
 
 def write_block_data( b, file_name, file_format, data_format ):
     """! Writes given block_data to specified file and format.
+    
+    This is just a wrapper around write_block_data_cpp, see that
+    documentation for the parameters. """
+    bh = new_block_data_cpp( b )
+    try:
+        write_block_data_cpp( bh, file_name, file_format, data_format )
+    finally:
+        free_block_data_cpp( bh )
+        
+                      
+def write_block_data_cpp( bh, file_name, file_format, data_format ):
+    """! Writes given block_data to specified file and format.
     @param b            Block data to write.
     @param fname        File name to write to.
     @param file_format  File format to write. Currently supported:
@@ -409,27 +421,10 @@ def write_block_data( b, file_name, file_format, data_format ):
     @param data_format  Data format to write. Currently supported:
                         'LAMMPS', 'HOOMD'
     """
-
-    bh = new_block_data_cpp( b )
-    try:
-        lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
-        fformat = file_format.encode( 'ascii' )
-        dformat = data_format.encode( 'ascii' )
-        fname   = file_name.encode( 'ascii' )
-        
-        lammpstools.write_block_to_file( bh, c_char_p(fname), fformat, dformat )
-                                         
-        
-        
-    finally:
-        free_block_data_cpp( bh )
     
-                      
-def write_block_data_cpp( bh, fname, file_format, data_format ):
-    """! Writes given C++-style block data handle to specified file and format.
-    @param b            
-    @param fname        
-    @param file_format  
-    @param data_format  
-    """
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+    fformat = file_format.encode( 'ascii' )
+    dformat = data_format.encode( 'ascii' )
+    fname   = file_name.encode( 'ascii' )
     
+    lammpstools.write_block_to_file( bh, fname, fformat, dformat )

@@ -5,11 +5,9 @@ if len(sys.argv) < 2:
     print( "Pass a dump file!", file = sys.stderr )
     sys.exit(-1)
 
-d = dumpreader.dumpreader( sys.argv[1] )
+d = dumpreader.dumpreader_cpp( sys.argv[1] )
 b = d.getblock()
 
-bh = block_data.new_block_data_cpp( b )
-block_data.free_block_data_cpp( bh )
-
-
+block_data.write_block_data( b, "test.gsd",  "BIN",   "HOOMD" )
+block_data.write_block_data( b, "test.dump", "PLAIN", "LAMMPS" )
 

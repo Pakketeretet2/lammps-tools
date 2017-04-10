@@ -76,12 +76,17 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 	uint64_t step = b.tstep;
 	uint8_t  dims = 3;
 	uint32_t N    = b.N;
+	double L[3];
 	float box[6];
-	box[0] = b.xhi[0] - b.xlo[0];
-	box[1] = b.xhi[1] - b.xlo[1];
-	box[2] = b.xhi[2] - b.xlo[2];
+	L[0] = b.xhi[0] - b.xlo[0];
+	L[1] = b.xhi[1] - b.xlo[1];
+	L[2] = b.xhi[2] - b.xlo[2];
 	box[3] = box[4] = box[5] = 0.0;
-	
+
+	box[0] = L[0];
+	box[1] = L[1];
+	box[2] = L[2];
+
 
 	status = gsd_write_chunk( gh, "configuration/step", GSD_TYPE_UINT64,
 	                          1, 1, 0, &step );
@@ -107,10 +112,15 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 	for( int i = 0; i < N; ++i ){
 		// Sort them along id:
 		int j = b.ids[i] - 1;
-		x[3*j  ] = b.x[i][0];
-		x[3*j+1] = b.x[i][1];
-		x[3*j+2] = b.x[i][2];
-		
+
+		// Remap the positions to -0.5L and 0.5L.
+		double xi[3];
+		for( int d = 0; d < 3; ++d ){
+			xi[d] = b.x[i][d] - b.xlo[d];
+			xi[d] -= 0.5*L[d];
+
+			x[3*j+d] = xi[d];
+		}
 		types[j] = b.types[i];
 	}
 	status = gsd_write_chunk( gh, "particles/position", GSD_TYPE_FLOAT,
@@ -139,7 +149,27 @@ void write_block_to_file( const block_data *bh, const char *fname,
 	std::cerr << "Writing block data at " << bh << " to " << fname << "\n";
 	std::cerr << "File format is " << file_format << " and Data format is "
 	          << data_format << ".\n";
-	
+
+	if( data_format == "LAMMPS" ){
+		if( file_format == "GZIP" ){
+			std::cerr << "GZIP not supported for LAMMPS yet!\n";
+		}else if( file_format == "BIN" ){
+			std::cerr << "BIN not supported for LAMMPS yet!\n";
+		}else{
+			write_block_lammps_dump( *bh, fname );
+		}
+		
+	}else if( data_format == "HOOMD" ){
+		if( file_format == "GZIP" || file_format == "PLAIN" ){
+			std::cerr << file_format
+			          << " not supported for HOOMD data!\n";
+		}else{
+			write_block_hoomd_gsd( *bh, fname );
+		}
+	}else{
+		std::cerr << "Data format " << data_format
+		          << " not recognized!\n";
+	}
 	
 }
 
