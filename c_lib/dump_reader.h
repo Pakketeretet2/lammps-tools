@@ -99,14 +99,8 @@ public:
 	}
 
 	dump_reader( std::istream &stream, int dformat = LAMMPS );
-	dump_reader( const std::string &fname );
-	
-
-	void setup_reader( std::istream &stream );
-	void setup_reader( const std::string &fname, int format );
-
-	void setup_interpreter( int dump_format );
-	void setup_interpreter_gsd( const std::string &fname );
+	dump_reader( const std::string &fname, int fformat = 1,
+	             int dformat = -1 );
 
 	/// Tries to read in the next block from file. If successful,
 	/// returns true and block_data contains the next block.
@@ -144,6 +138,16 @@ private:
 
 	reader_core      *reader;
 	dump_interpreter *interp;
+
+	void guess_file_type( const std::string &fname );
+	void guess_dump_type( const std::string &fname );
+	void post_constructor( const std::string &fname );
+	
+	void setup_reader( std::istream &stream );
+	void setup_reader( const std::string &fname, int format );
+
+	void setup_interpreter( int dump_format );
+	void setup_interpreter_gsd( const std::string &fname );
 };
 
 
@@ -156,7 +160,8 @@ struct dump_reader_handle {
 	block_data  *last_block;
 };
 	
-dump_reader_handle *get_dump_reader_handle( const char *dname );
+dump_reader_handle *get_dump_reader_handle( const char *dname,
+                                            py_int dformat, py_int fformat );
 void release_dump_reader_handle( dump_reader_handle *dh );
 bool dump_reader_next_block( dump_reader_handle *dh );
 void dump_reader_get_block_meta( dump_reader_handle *dh,

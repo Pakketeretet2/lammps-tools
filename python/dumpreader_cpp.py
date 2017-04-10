@@ -17,23 +17,54 @@ from block_data import *
 
 
 class dumpreader_cpp:
-    def __init__(self, fname ):
+    """
+    Interface to the C++ dump reader. This is the preferred method of
+    reading dump files from Python due to its enhanced performance and better
+    flexibility.
+    """
+    
+    def __init__(self, fname, dformat = None, fformat = None):
+        ## This is the constructor for the dump reader.
+        #  @arg fname   Dump file name
+        #  @arg dformat Dump format (0 = LAMMPS, 1 = GSD, 2 = DCD)
+        #  @arg fformat File format (0 = plain text, 1 = GZipped, 3 = binary)
+        #
+        #  It opens a handle to an instance of a C++ dump_reader which does
+        #  all of the heavy lifting. The handle is released in the destructor
+        ## 
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
-        self.handle = lammpstools.get_dump_reader_handle( fname.encode() )
+
+        if fformat == 2:
+            raise LogicError("A file format of 2 (Input stream) is not supported!")
+
+        if dformat is None:
+            dformat = -1
+        if fformat is None:
+            fformat = -1
+
+        self.handle = lammpstools.get_dump_reader_handle( fname.encode(),
+                                                          fformat, dformat )
+            
         print("Opened dump reader handle @ ", hex(self.handle),
               file = sys.stderr)
         self.at_eof = False
+        
 
     def __del__(self):
+        ## This is the deconstructor.
+        ## It releases handle to the C++ dump_reader.
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
         print("Releasing dump reader handle @ ", hex(self.handle),
               file = sys.stderr)
         lammpstools.release_dump_reader_handle( self.handle )
 
+
     def __iter__(self):
+        ## Makes the dumpreader iterable, i.e., you can do for b in d:
         return self
 
     def __next__(self):
+        ## Iterates to next block.
         if not self.at_eof:
             tmp_b = self.getblock()
             if tmp_b is None:
@@ -46,9 +77,11 @@ class dumpreader_cpp:
         
 
     def getblock(self):
+        ## Returns a block_data containing the info of the next block,
+        ## or None if the next block could somehow not be read.
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
         domain = domain_data( np.array( [0, 0, 0] ), np.array( [0, 0, 0] ),
-                              0, "pp pp pp" )
+                              0, "ITEM: BOX BOUNDS pp pp pp" )
 
         N = ctypes.c_longlong(0)
         tstep = ctypes.c_longlong(0)
@@ -96,7 +129,9 @@ class dumpreader_cpp:
 
     
     def fast_forward(self,Nblocks=1):
-        """! Fast-forwards Nblocks. """
+        ## Fast-forwards a number of blocks.
+        #  @arg Nblocks  The number of blocks to skip.
+        ##
         if self.at_eof:
             print("At EOF already, cannot get more blocks!", file = sys.stderr)
             return None
@@ -111,8 +146,8 @@ class dumpreader_cpp:
             self.at_eof = True
 
     def get_all_blocks(self):
-        """! Returns all blocks in the data file in a list of blocks.
-             This can be very memory-heavy!"""
+        ## Returns Returns all blocks in the data file in a list of blocks.
+        ## This can be very memory-heavy!
         all_data = []
         for b in self:
             all_data.append(b)

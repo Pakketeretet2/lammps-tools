@@ -117,14 +117,29 @@ dump_reader::dump_reader( std::istream &stream, int dformat ) :
 	setup_reader( stream );
 }
 
-dump_reader::dump_reader( const std::string &fname ) : dump_format( -1 ),
-                                                       file_format( PLAIN )
+
+
+dump_reader::dump_reader( const std::string &fname, int dformat, int fformat )
+	: dump_format( dformat ), file_format( fformat )
 {
-	
+	if( dump_format < 0 ) guess_dump_type( fname );
+	if( file_format < 0 ) guess_file_type( fname );
+
+	post_constructor( fname );
+}
+
+void dump_reader::guess_file_type( const std::string &fname )
+{
 	if( ends_with( fname, ".gz" ) ){
 		file_format = GZIP;
+	}else{
+		std::cerr << "File format assumed to be plain text.\n";
+		file_format = PLAIN;
 	}
-	
+}
+
+void dump_reader::guess_dump_type( const std::string &fname )
+{
 	if( ends_with( fname, ".gsd" ) ){
 		dump_format = GSD;
 	}else if( ends_with( fname, ".dump" ) ){
@@ -140,13 +155,10 @@ dump_reader::dump_reader( const std::string &fname ) : dump_format( -1 ),
 		          << "format, explicitly state the dump format!\n";
 		std::terminate();
 	}
+}
 
-
-	std::cerr << "File format assumed to be " << file_format << " ( "
-	          << dump_reader::fformat_to_str(file_format) << " ), dump type "
-	          << dump_format << " ( "
-	          << dump_reader::dformat_to_str(dump_format) << " ).\n";
-
+void dump_reader::post_constructor( const std::string &fname )
+{
 	if( dump_format != GSD ){
 		setup_interpreter( dump_format );
 		setup_reader( fname, file_format );
@@ -159,6 +171,8 @@ dump_reader::dump_reader( const std::string &fname ) : dump_format( -1 ),
 		std::terminate();
 	}
 }
+
+
 
 
 dump_reader::~dump_reader()
@@ -280,15 +294,15 @@ std::size_t dump_reader::block_count()
 // **************** For interfacing with foreign languages *********************
 extern "C" {
 
-dump_reader_handle *get_dump_reader_handle( const char *dname )
+dump_reader_handle *get_dump_reader_handle( const char *dname,
+                                            py_int dformat, py_int fformat )
 {
 	std::cerr << "dname = " << dname << "\n";
 	dump_reader_handle *dh = new dump_reader_handle;
 	dh->last_block = nullptr;
 	dh->reader     = nullptr;
 	std::string name( dname );
-	
-	dh->reader = new dump_reader( name );
+	dh->reader = new dump_reader( name, fformat, dformat );
 	dh->last_block = new block_data;
 	
 	return dh;
