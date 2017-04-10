@@ -153,7 +153,7 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 	
 	for( int t = 0; t < n_types; ++t ){
 		gsd_utf8_char * current_name = type_names + t*buff_size;
-		std::string number = "haha wtf man " + std::to_string( t+1 );
+		std::string number = std::to_string( t+1 );
 		int idx;
 		for( idx = 0; idx < number.length(); ++idx ){
 			current_name[idx].c[0] = number[idx];
