@@ -65,7 +65,7 @@ def append_col(block, col):
     return block
 
 
-def read_data(fname):
+def read_data(fname, atom_style = None):
     """! Reads a data file, converts it to block_data and returns that. """
     with open(fname) as fin:
         
@@ -74,9 +74,23 @@ def read_data(fname):
         xlo = np.array([0,0,0],dtype=np.float64)
         xhi = np.array([0,0,0],dtype=np.float64)
         dom = domain_data(xlo, xhi, 0, "")
+        mol = None
 
         skip_two = 0
+        if atom_style is None:
+            print("Assuming atom_style is atomic.", file=sys.stderr)
+            atom_style = "atomic"
         
+        if atom_style == "atomic":
+            nwords_expect = 5
+
+        elif atom_style == "molecular":
+            nwords_expect = 6
+
+        else:
+            print("Atom style ", atom_style, " not supported.")
+            return None
+            
         while True:
             line = fin.readline()
             if skip_two < 2:
@@ -98,6 +112,9 @@ def read_data(fname):
                         ids = np.zeros(N,dtype=int)
                         types = np.zeros(N,dtype=int)
                         x     = np.zeros([N,3], dtype=float)
+
+                        if atom_style == "molecular":
+                            mol = np.zeros(N, dtype = int)
         
                 if( len(words) > 3 ):
                     if( words[2] == "xlo" and words[3] == "xhi" ):
@@ -119,22 +136,37 @@ def read_data(fname):
                         line = line.rstrip()
 
                         words = line.split()
-                        idi = int(words[0])
-                        ity = int(words[1])
-                        xi  = float(words[2])
-                        yi  = float(words[3])
-                        zi  = float(words[4])
+                        if len(words) != nwords_expect:
+                            print("Incorrect formatting of data file for ",
+                                  "atom_style ", atom_style)
+                            return None
+                        if atom_style == "atomic":
+                            idi = int(words[0])
+                            ity = int(words[1])
+                            xi  = float(words[2])
+                            yi  = float(words[3])
+                            zi  = float(words[4])
+                        elif atom_style == "molecular":
+                            idi = int(words[0])
+                            im  = int(words[1])
+                            ity = int(words[2])
+                            xi  = float(words[3])
+                            yi  = float(words[4])
+                            zi  = float(words[5])
 
                         ids[jjj] = idi;
                         types[jjj] = ity;
                         x[jjj,0] = xi
                         x[jjj,1] = yi
                         x[jjj,2] = zi
+                        if mol is not None:
+                            mol[jjj] = im;
+                        
                         
                         jjj += 1
 
     bm = block_meta(t,N,dom)
-    b = block_data(bm,ids=ids,types=types,x=x)
+    b = block_data(bm,ids=ids,types=types,x=x, mol = mol)
     return b
 
 

@@ -119,6 +119,16 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 			xi[d] = b.x[i][d] - b.xlo[d];
 			xi[d] -= 0.5*L[d];
 
+			// Check box bounds:
+			if( xi[d] > 0.5*L[d] || xi[d] < -0.5*L[d] ){
+				std::cerr << "Particle " << b.ids[i] << " is "
+				          << "out of box bound in dim " << d
+				          << " ( " << -0.5*L[d] << ", "
+				          << 0.5*L[d] << " ) with x = "
+				          << xi[d] << ".\n";
+				std::terminate();
+			}
+			
 			x[3*j+d] = xi[d];
 		}
 		types[j] = b.types[i];
