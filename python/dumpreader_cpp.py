@@ -113,6 +113,14 @@ class dumpreader_cpp:
         types = np.empty( N.value, dtype = int )
         mol   = np.zeros( N.value, dtype = int )
 
+
+        if atom_style.value == 0:
+            atom_style_named = "atomic"
+        elif atom_style.value == 1:
+            atom_style_named = "molecular"
+        else:
+            raise RuntimeError("Unknown atom style ", atom_style.value,
+                               " encountered!")
         
         lammpstools.dump_reader_get_block_data(
             self.handle, N, x.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
@@ -123,6 +131,7 @@ class dumpreader_cpp:
         
         dom  = domain_data( xlo, xhi, periodic.value, box_line )
         meta = block_meta( tstep.value, N.value, dom )
+        meta.atom_style = atom_style_named
         b = block_data( meta, ids, types, x, mol )
         
         return b

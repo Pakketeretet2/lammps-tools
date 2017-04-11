@@ -11,14 +11,14 @@
 
 #ifdef HAVE_BOOST_GZIP
 reader_core_gzip::reader_core_gzip( const std::string &fname )
-	: infile( fname, std::ios_base::in | std::ios_base::binary )
+	: infile( fname, std::ios_base::in | std::ios_base::binary ), debug(false)
 {
 	in.push( boost::iostreams::gzip_decompressor() );
 	in.push( infile );
 }
 #else
 
-reader_core_gzip::reader_core_gzip( const std::string &fname ) : in(std::cin)
+reader_core_gzip::reader_core_gzip( const std::string &fname ) : in(std::cin), debug(false)
 {
 	std::cerr << "Cannot use gzip files without boost_gzip support!\n";
 	std::terminate();
@@ -27,6 +27,12 @@ reader_core_gzip::reader_core_gzip( const std::string &fname ) : in(std::cin)
 
 reader_core_gzip::~reader_core_gzip()
 {}
+
+
+void reader_core_gzip::set_debug( bool d )
+{
+	debug = d;
+}
 
 bool reader_core_gzip::getline( std::string &line )
 {

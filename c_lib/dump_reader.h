@@ -23,6 +23,8 @@ public:
 	
 	virtual bool getline( std::string &line );
 	virtual void rewind();
+
+	virtual void set_debug(bool){}
 };
 
 
@@ -99,7 +101,7 @@ public:
 	}
 
 	dump_reader( std::istream &stream, int dformat = LAMMPS );
-	dump_reader( const std::string &fname, int fformat = 1,
+	dump_reader( const std::string &fname, int fformat = -1,
 	             int dformat = -1 );
 
 	/// Tries to read in the next block from file. If successful,
@@ -144,9 +146,9 @@ private:
 	void post_constructor( const std::string &fname );
 	
 	void setup_reader( std::istream &stream );
-	void setup_reader( const std::string &fname, int format );
+	void setup_reader( const std::string &fname );
 
-	void setup_interpreter( int dump_format );
+	void setup_interpreter();
 	void setup_interpreter_gsd( const std::string &fname );
 };
 

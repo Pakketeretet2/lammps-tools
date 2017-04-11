@@ -28,22 +28,11 @@ enum atom_styles {
 	ATOMIC,
 	MOLECULAR
 };
-	
-struct block_meta {
-
-	block_meta() : N(0), tstep(0), atom_style(atom_styles::ATOMIC),
-	               periodic(0), xlo{0,0,0}, xhi{0,0,0}, boxline(7,' ')
-	{}
-	py_int N, tstep;
-	py_int atom_style;
-	py_int periodic;
-	py_float xlo[3], xhi[3];
-	std::string boxline;
-};
 
 
 struct block_data
 {
+	// Needs a custom assignment operator and copy constructor to work.
 	py_float **x;
 	py_float *x_;
 	py_int *ids, *types;
@@ -61,6 +50,11 @@ struct block_data
 	block_data();
 	block_data( int N );
 	~block_data();
+
+	// Deliberately void to prevent assignment chaining.
+	void operator=( const block_data &o );
+	block_data( const block_data &o );
+	void swap( block_data &o ) throw(); // For copy-and-swap idiom.
 	
 	void resize( int N );
 	void init( int N );
@@ -70,7 +64,7 @@ private:
 };
 
 
-void copy( block_data &b, const block_data &source );
+// void copy( block_data &b, const block_data &source );
 	
 }
 
@@ -97,7 +91,7 @@ block_data filter_block( block_data b, const container &ids )
 {
 	block_data b_filter;
 	py_int M = 0;
-	copy( b_filter, b );
+	b_filter = b;
 	
 
 	for( int i = 0; i < b.N; ++i ){
@@ -124,7 +118,7 @@ block_data filter_block_by_indices( block_data b, const container &indices )
 {
 	block_data b_filter;
 	py_int M = 0;
-	copy( b_filter, b );
+	b_filter = b;
 	
 
 	for( py_int i : indices ){

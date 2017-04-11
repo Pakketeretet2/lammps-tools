@@ -20,6 +20,7 @@ public:
 	virtual bool getline( std::string &line );
 	virtual void rewind();
 
+	virtual void set_debug(bool);
 private:
 	std::ifstream infile;
 #ifdef HAVE_BOOST_GZIP
@@ -27,6 +28,7 @@ private:
 #else
 	std::istream &in;
 #endif
+	bool debug;
 };
 
 

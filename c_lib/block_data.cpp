@@ -22,6 +22,67 @@ block_data::block_data( int N ) : x(nullptr), x_(nullptr), ids(nullptr),
 	init(N);
 }
 
+	
+
+block_data::block_data( const block_data &o )
+{
+	*this = o;
+}
+
+
+// TODO: Rewrite this into copy & swap:
+void block_data::operator=( const block_data &o )
+{
+	init( o.N );
+	// This needs to copy _all_ the fields of block_data, _except_ x
+	// because x refers to the memory of x_!
+	std::copy( o.x_,    o.x_    + 3*N, x_ );
+	std::copy( o.ids,   o.ids   + N,   ids );
+	std::copy( o.types, o.types + N,   types );
+	if( o.atom_style == atom_styles::MOLECULAR ){
+		if( !o.mol ){
+			std::cerr << "Copying block dat with atom_style "
+			          << "molecular but it's missing mol array!\n";
+			std::terminate();
+		}
+		std::copy( o.mol, o.mol + N, mol );
+	}
+
+	std::copy( o.xlo, o.xlo + 3, xlo );
+	std::copy( o.xhi, o.xhi + 3, xhi );
+
+	tstep      = o.tstep;
+	periodic   = o.periodic;
+	atom_style = o.atom_style;
+	boxline    = o.boxline;
+
+	// Copy the other cols:
+	int N_other_cols = o.other_cols.size();
+	other_cols.resize( N_other_cols );
+	
+	for( int i = 0; i < o.other_cols.size(); ++i ){
+		
+		int M = o.other_cols[i].data.size();
+		other_cols[i].resize( M );
+		other_cols[i].header = o.other_cols[i].header;
+		for( int j = 0; j < M; ++i ){
+			other_cols[i].data[j] = o.other_cols[i].data[j];
+		}
+	}
+}
+
+/*
+void block_data::operator=( const block_data &o )
+{
+	block_data tmp(o);
+	tmp.swap(*this);
+}
+
+void block_data::swap( block_data &o ) throw()
+{
+	std::swap( *this, o );
+}
+*/
 
 void block_data::delete_members()
 {
@@ -146,6 +207,7 @@ void block_data_from_foreign( const void *x, py_int N, const py_int *ids,
 	b.boxline = box_line;
 }
 
+/*
 void copy( block_data &b, const block_data &source )
 {
 	b.resize( source.N );
@@ -163,10 +225,6 @@ void copy( block_data &b, const block_data &source )
 	b.boxline = source.boxline;
 	b.periodic = source.periodic;
 
-	/*
-	std::cerr << "Copying " << source.other_cols.size()
-	          << " other cols as well...\n";
-	*/
 	
 	b.other_cols.resize( source.other_cols.size() );
 	for( int i = 0; i < b.other_cols.size(); ++i ){
@@ -191,7 +249,7 @@ void copy( block_data &b, const block_data &source )
 		}
 	}	
 }
-
+*/
 
 extern "C" {
 

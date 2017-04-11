@@ -6,8 +6,10 @@ bool dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block
 {
 	bool success = false;
 	std::string line;
-
-
+	r->set_debug(true);
+	
+	
+	
 	while( r->getline( line ) ){
 		if( line == "ITEM: TIMESTEP" ){
 			r->getline( line );
@@ -72,7 +74,7 @@ bool dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block
 		if( headers.empty() ){
 			set_headers( line.substr( 12 ) );
 		}
-		
+
 		block.atom_style = atom_style;
 		block.boxline = last_meta.boxline;
 		block.tstep = last_meta.tstep;
@@ -170,6 +172,7 @@ bool dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
 	if( success ){
 		return next_block_body( r, block );		
 	}else{
+		std::cerr << "Failed to get meta!\n";
 		return false;
 	}
 }

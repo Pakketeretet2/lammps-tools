@@ -96,7 +96,7 @@ bool dump_interpreter::last_block( reader_core *r, block_data &block )
 	bool success = next_block( r, block );
 	if( success ){
 		do{
-			copy( last_block, block );
+			last_block = block;
 		}while( next_block( r, block ) );
 		return success;
 	}else{
@@ -113,13 +113,13 @@ dump_reader::dump_reader( std::istream &stream, int dformat ) :
 {
 	file_format = ISTREAM;
 	dump_format = dformat;
-	setup_interpreter( dump_format );
+	setup_interpreter();
 	setup_reader( stream );
 }
 
 
 
-dump_reader::dump_reader( const std::string &fname, int dformat, int fformat )
+dump_reader::dump_reader( const std::string &fname, int fformat, int dformat )
 	: dump_format( dformat ), file_format( fformat )
 {
 	if( dump_format < 0 ) guess_dump_type( fname );
@@ -160,8 +160,8 @@ void dump_reader::guess_dump_type( const std::string &fname )
 void dump_reader::post_constructor( const std::string &fname )
 {
 	if( dump_format != GSD ){
-		setup_interpreter( dump_format );
-		setup_reader( fname, file_format );
+		setup_interpreter();
+		setup_reader( fname );
 	}else if( dump_format == GSD ){
 		setup_interpreter_gsd( fname );
 		reader = nullptr; // gsd uses it's own reader.
@@ -191,13 +191,14 @@ void dump_reader::setup_reader( std::istream &stream )
 	}
 }
 
-void dump_reader::setup_reader( const std::string &fname, int format )
+void dump_reader::setup_reader( const std::string &fname )
 {
-	if( format == GZIP ){
+	std::cerr << "Setting up reader for format " << file_format << ".\n";
+	if( file_format == GZIP ){
 		reader = new reader_core_gzip( fname );
-	}else if( format == PLAIN ){
+	}else if( file_format == PLAIN ){
 		reader = new reader_core_plain( fname );
-	}else if( format == BIN ){
+	}else if( file_format == BIN ){
 		reader = new reader_core_bin( fname );
 	}else{
 		std::cerr << "File format for reader not recognized!\n";
@@ -210,7 +211,7 @@ void dump_reader::setup_reader( const std::string &fname, int format )
 	}	
 }
 
-void dump_reader::setup_interpreter( int dump_format )
+void dump_reader::setup_interpreter()
 {
 	if( dump_format == LAMMPS ){
 		interp = new dump_interpreter_lammps();
@@ -312,6 +313,7 @@ void release_dump_reader_handle( dump_reader_handle *dh )
 {
 	if( dh ){
 		if( dh->reader ) delete dh->reader;
+		if( dh->last_block ) delete dh->last_block;
 		delete dh;
 	}
 }
@@ -319,14 +321,18 @@ void release_dump_reader_handle( dump_reader_handle *dh )
 bool dump_reader_next_block( dump_reader_handle *dh )
 {
 	block_data block;
+	std::cerr << "Calling next_block on dh @ " << dh << "\n";
 	bool status = dh->reader->next_block( block );
 	if( !status ){
 		std::cerr << "Failed to get next block\n";
 		return false;
 	}
+	
 	// std::cerr << "Got next block of " << block.N
 	//           << " particles at time " << block.tstep << ".\n";
-	copy( *(dh->last_block), block );
+	block_data *address = dh->last_block;
+	std::cerr << "Got next block, it's @ " << address << "\n";
+	*address = block;
 	return true;
 }
 

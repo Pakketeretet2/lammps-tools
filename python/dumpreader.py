@@ -22,8 +22,8 @@ class dumpreader:
 
         @param fname Name of dump file to read.
         """
-        print("The Python-based dump reader is deprecated and will be removed in a future version. ",
-              "Use dumpreader_cpp instead!")
+        print("WARNING: The Python-based dump reader is deprecated and will ",
+              " be removed in a future version. Use dumpreader_cpp instead!")
 
         
         # Check if exists:

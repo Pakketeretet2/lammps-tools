@@ -16,12 +16,17 @@ public:
 
 	virtual bool getline( std::string &line );
 	virtual void rewind();
-
+	virtual void set_debug(bool debug)
+	{
+		debug = debug;
+	}
 private:
 	std::istream *in;
 	bool got_file;
 
 	int lc;
+
+	bool debug;
 };
 
 
