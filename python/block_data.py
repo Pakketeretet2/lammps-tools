@@ -27,13 +27,16 @@ class block_meta:
         self.N = N
         self.domain = domain
         self.atom_style = "atomic"
+
     
-        
 class block_data:
     """! Just a 'struct' that contains some basic data."""
+    
     def __init__(self,meta,ids,types,x, mol = None):
-        self.meta = meta
+        """! Initialises the block data from given block meta, 
+        ids, types and positions."""
         
+        self.meta = meta
         self.ids = ids
         self.types = types
         self.x = x
@@ -44,6 +47,128 @@ class block_data:
             self.meta.atom_style = "molecular"
             
         self.other_cols = []
+
+    
+    def add_particle( self, xi, idi, typei, moli = None, idx = None ):
+        """! Adds given particle to the block_data and
+        updates all members accordingly.
+        Do not use this to append a lot of particles as that is slow.
+        Use \f merge for that.
+        """
+        if self.meta.atom_style == "molecular" and (moli is None and not self.mol is None):
+            print("For atom_styles that have mol, pass a mol id ",
+                  "as well (can be 0)!")
+        # Some checks:
+        if idi in self.ids:
+            print("id ", idi, " is already present in ids!")
+            return None
+
+        
+        self.meta.N += 1
+        
+        # Resize all arrays:
+        grow_arrays_( self, self.meta.N )
+        
+
+        if idx is None:
+            idx = self.meta.N-1
+            self.ids[idx]   = idi
+            self.types[idx] = typei
+            self.x[idx]     = xi
+            if self.mol is not None:
+                self.mol[idx] = moli
+        else:
+            # Gotta swap...
+            jdx = self.meta.N-1
+            self.ids[jdx] = self.ids[idx]
+            self.types[jdx] = self.types[idx]
+            self.x[jdx] = self.x[idx]
+
+            self.ids[idx]   = idi
+            self.types[idx] = typei
+            self.x[idx]     = xi
+
+            if self.mol is not None:
+                self.mol[jdx] = self.mol[idx]
+                self.mol[idx] = moli
+
+
+    def merge( self, other_block, error_on_double_id = True ):
+        """! Merges \p other_block into this one. """
+        if error_on_double_id:
+            self.merge_keep_ids_( other_block )
+        else:
+            self.merge_fresh_ids_( other_block )
+
+        # After merging all particle data, merge the metadata.
+        newxlo = np.zeros( 3, dtype = float )
+        newxhi = np.zeros( 3, dtype = float )
+
+        my_dom = self.meta.domain
+        o_dom  = other_block.meta.domain
+
+        for i in range(0,2):
+            newxlo[i] = min( my_dom.xlo[i], o_dom.xlo[i] )
+            newxhi[i] = max( my_dom.xhi[i], o_dom.xhi[i] )
+
+        self.meta.domain.xlo = newxlo
+        self.meta.domain.xhi = newxhi
+
+        if (my_dom.periodic != o_dom.periodic or
+            my_dom.box_line != o_dom.box_line):
+           print("Some domain settings were not consistent between blocks. ",
+                 "Throwing away info of other block!", file = sys.stderr )
+
+    
+    def merge_fresh_ids_( self, other_block ):
+        """! Merges \p other_block but sets the ids of its particles
+        to 'fresh' values starting from the largest id in self + 1. """
+        old_max = self.meta.N
+        new_id = np.max( self.ids ) + 1
+        new_N = self.meta.N + other_block.meta.N
+        self.grow_arrays_( new_N )
+        
+        for j in range( old_max, new_N ):
+            i = j-old_max
+            self.ids[j]   = new_id
+            self.x[j]     = other_block.x[i]
+            self.types[j] = other_block.types[i]
+            if self.meta.atom_style == "molecular":
+                self.mol[j] = other_block.mol[i]
+            
+            new_id += 1
+            
+
+    def merge_keep_ids_( self, other_block ):
+        """! Merges \p other_block and keeps its ids. Errors if double 
+        id is encountered. """
+        old_max = self.meta.N
+        new_N = self.meta.N + other_block.meta.N
+        
+        self.grow_arrays_( new_N )
+        for j in range( old_max, new_N ):
+            i = j-old_max
+            if other_block.ids[i] in self.ids[0:old_max]:
+                raise RuntimeError("Double ID encountered!")
+            
+            self.ids[j]   = other_block.ids[i]
+            self.x[j]     = other_block.x[i]
+            self.types[j] = other_block.types[i]
+            if self.meta.atom_style == "molecular":
+                self.mol[j] = other_block.mol[i]
+            
+            new_id += 1
+        
+            
+    def grow_arrays_( self, new_N ):
+        """! Resizes the arrays and particle number. """
+        self.ids   = np.resize(self.ids,   new_N)
+        self.types = np.resize(self.types, new_N)
+        self.x     = np.resize(self.x,     [new_N,3])
+        
+        if self.meta.atom_style == "molecular":
+            self.mol = np.resize(self.mol, self.meta.N)
+        self.meta.N = new_N
 
 
 class dump_col:
