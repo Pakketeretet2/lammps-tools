@@ -21,6 +21,12 @@ public:
 	virtual void rewind();
 
 	virtual void set_debug(bool);
+	virtual operator bool() const
+	{
+		return static_cast<bool>(infile);
+	}
+	
+	
 private:
 	std::ifstream infile;
 #ifdef HAVE_BOOST_GZIP

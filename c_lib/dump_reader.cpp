@@ -194,6 +194,11 @@ void dump_reader::setup_reader( std::istream &stream )
 void dump_reader::setup_reader( const std::string &fname )
 {
 	std::cerr << "Setting up reader for format " << file_format << ".\n";
+	if( !file_exists( fname ) ){
+		std::cerr << "File " << fname << " doesn't exist!\n";
+		std::terminate();
+	}
+	
 	if( file_format == GZIP ){
 		reader = new reader_core_gzip( fname );
 	}else if( file_format == PLAIN ){
@@ -205,10 +210,10 @@ void dump_reader::setup_reader( const std::string &fname )
 		std::terminate();
 	}
 
-	if( !reader ){
-		std::cerr << "Failure setting up reader!\n";
+	if( !reader || !(*reader) ){
+		std::cerr << "Failure setting up reader! Perhaps file doesn't exist?\n";
 		std::terminate();
-	}	
+	}
 }
 
 void dump_reader::setup_interpreter()

@@ -9,8 +9,9 @@ install :
 	$(MAKE) -C c_lib install
 
 dox :
-	cd python; doxygen;
-	ln -s --force ./python/html/index.html manual.html
+	@cd c_lib && doxygen;
+	doxygen
+	ln -s --force ./html/index.html manual.html
 
 clean-dox :
 	rm -rf html

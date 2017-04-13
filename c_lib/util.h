@@ -1,13 +1,23 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+/**
+   \file util.h
+
+  @brief Some general numerical/string/file utilities.
+
+  \ingroup cpp_lib
+*/
+
+
 #include <string>
 #include <sstream>
 #include <algorithm>
 #include <numeric>
 #include <algorithm>
+#include <fstream>
 
-#include "list.h"
+// #include "list.h"
 
 inline bool starts_with( const std::string &s, const std::string &begin )
 {
@@ -108,6 +118,11 @@ inline bool is_non_negative( const std::string &s )
 		}
 	}
 	return true;
+}
+
+inline bool file_exists( const std::string &fname )
+{
+	return std::ifstream(fname).good();
 }
 
 

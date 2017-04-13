@@ -1,7 +1,26 @@
+"""!
+\ingroup lammpstools
+
+Produces a histogram in a more intuitive way than numpy does.
+"""
+
+
 import numpy as np
 
 
+
 def make_histogram( yy, y0, y1, Nbins ):
+    """! Produces a histogram from data in yy.
+    
+    @param yy    Data to histogram
+    @param y0    Lower bound of histogram
+    @param y1    Upper bound of histogram
+    @param Nbins Number of bins.
+
+    The number of bins, y0 and y1 together implicitly define
+    the resolution dy = (y1 - y0) / (Nbins-1). Note that data
+    outside of the bracket [y0,y1] is discarded.
+    """
     count = 0.0;
     hist = np.zeros(Nbins, dtype=float)
     dx = (y1 - y0) / (Nbins-1.0)

@@ -5,12 +5,12 @@
 void neighborize_delaunay( const arr3f &x, py_int N, const arr1i &ids,
                            const arr1i &types, py_int periodic,
                            const py_float *xlo, const py_float *xhi, py_int dims,
-                           list *neighs, py_int itype, py_int jtype ) {}
+                           std::list<py_int> *neighs, py_int itype, py_int jtype ) {}
 
 void neighborize_conv_hull( const arr3f &x, py_int N, const arr1i &ids,
                             const arr1i &types, py_int periodic,
                             const py_float *xlo, const py_float *xhi, py_int dims,
-                            list *neighs, py_int itype, py_int jtype ) {}
+                            std::list<py_int> *neighs, py_int itype, py_int jtype ) {}
 
 #else
 // Actual implementation using CGAL. Requires many includes...
@@ -40,7 +40,7 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 static my_ostream my_out( std::cout );
 
-inline bool in_list( py_int jd, const list &ni )
+inline bool in_list( py_int jd, const std::list<py_int> &ni )
 {
 	return std::find( ni.begin(), ni.end(), jd ) != ni.end();
 }
@@ -50,7 +50,7 @@ inline bool in_list( py_int jd, const list &ni )
 void neighborize_delaunay_2d( const arr3f &x, py_int N, const arr1i &ids,
                               const arr1i &types, const py_float *xlo,
                               const py_float *xhi,
-                              list *neighs, py_int itype, py_int jtype )
+                              std::list<py_int> *neighs, py_int itype, py_int jtype )
 {
 	typedef CGAL::Triangulation_vertex_base_with_info_2<py_int, K> Vb;
 	typedef CGAL::Triangulation_data_structure_2<Vb> Tds;
@@ -114,7 +114,7 @@ void neighborize_delaunay_2d( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_delaunay_3d( const arr3f &x, py_int N, const arr1i &ids,
                               const arr1i &types, const py_float *xlo,
                               const py_float *xhi,
-                              list *neighs, py_int itype, py_int jtype )
+                              std::list<py_int> *neighs, py_int itype, py_int jtype )
 {}
 
 
@@ -122,7 +122,7 @@ void neighborize_delaunay_3d( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_delaunay_p_2d( const arr3f &x, py_int N, const arr1i &ids,
                                 const arr1i &types, const py_float *xlo,
                                 const py_float *xhi,
-                                py_int periodic, list *neighs, py_int itype, py_int jtype )
+                                py_int periodic, std::list<py_int> *neighs, py_int itype, py_int jtype )
 {
 	typedef CGAL::Periodic_2_triangulation_filtered_traits_2<K> Gt;
 	typedef CGAL::Periodic_2_triangulation_vertex_base_2<Gt> Vb_base;
@@ -204,7 +204,7 @@ void neighborize_delaunay_p_2d( const arr3f &x, py_int N, const arr1i &ids,
 
 void neighborize_delaunay_p_3d( const arr3f &x, py_int N, const arr1i &ids,
                                 const arr1i &types, const py_float *xlo, const py_float *xhi,
-                                py_int periodic, list *neighs, py_int itype, py_int jtype )
+                                py_int periodic, std::list<py_int> *neighs, py_int itype, py_int jtype )
 {
 
 }
@@ -214,7 +214,7 @@ void neighborize_delaunay_p_3d( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_delaunay( const arr3f &x, py_int N, const arr1i &ids,
                            const arr1i &types, py_int periodic,
                            const py_float *xlo, const py_float *xhi, py_int dims,
-                           list *neighs, py_int itype, py_int jtype )
+                           std::list<py_int> *neighs, py_int itype, py_int jtype )
 {
 	if( (periodic != PERIODIC_NONE) && (periodic != PERIODIC_FULL) ){
 		std::cerr << "Cannot use Delaunay for semi-periodic systems!\n";
@@ -247,7 +247,7 @@ void neighborize_delaunay( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_conv_hull( const arr3f &x, py_int N, const arr1i &ids,
                             const arr1i &types, py_int periodic,
                             const py_float *xlo, const py_float *xhi, py_int dims,
-                            list *neighs, py_int itype, py_int jtype )
+                            std::list<py_int> *neighs, py_int itype, py_int jtype )
 {
 	typedef CGAL::Polyhedron_3<K> poly;
 	typedef K::Point_3 point;

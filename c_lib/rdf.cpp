@@ -1,5 +1,4 @@
 #include "rdf.h"
-#include "list.h"
 #include "neighborize.h"
 #include "id_map.h"
 #include "domain.h"
@@ -7,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <list>
 #include <iostream>
 #include <algorithm>
 #include <cassert>
@@ -19,7 +19,7 @@ void compute_rdf_impl( const arr3f &x, py_int N, const arr1i &ids,
                        const arr1i &types, py_float x0, py_float x1,
                        py_int nbins, py_int itype, py_int jtype,
                        py_float *xlo, py_float *xhi,
-                       py_int periodic, py_int dim, list *neighs,
+                       py_int periodic, py_int dim, std::list<py_int> *neighs,
                        arr1f &ardf, arr1f &acoord )
 {
 	double dr  = (x1 - x0) / ( nbins - 1 );
@@ -64,7 +64,7 @@ void compute_rdf_impl( const arr3f &x, py_int N, const arr1i &ids,
 		if( itype && (types[i] != itype) ) continue;
 		
 		py_int id = ids[i];
-		const list &curr = neighs[i];
+		const std::list<py_int> &curr = neighs[i];
 		
 		for ( py_int j : curr ){
 			// if( jd <= id ) continue;
@@ -131,7 +131,7 @@ void compute_rdf_impl( const arr3f &x, py_int N, const arr1i &ids,
 
 void compute_adf_impl( const arr3f &x, py_int N, const arr1i &ids,
                        const arr1i &types, py_int nbins, py_int itype, py_int jtype,
-                       py_float R, list *neighs, arr1f &aadf, arr1f &acoord )
+                       py_float R, std::list<py_int> *neighs, arr1f &aadf, arr1f &acoord )
 {
 	// First check if the atom positions are all on the sphere:
 	const double R2 = R*R;
@@ -237,7 +237,7 @@ void compute_rdf( void *px, py_int N, py_int *pids, py_int *ptypes,
 
 	// Make neigh list first:
 	py_int max_id = *std::max_element( ids.begin(), ids.end() );
-	list *neighs = new list[max_id+1];
+	std::list<py_int> *neighs = new std::list<py_int>[max_id+1];
 
 	neighborize_impl( x, N, ids, types, x1+0.1, periodic,
 	                  xlo, xhi, dim, method, neighs, 0, 0 );
@@ -307,7 +307,7 @@ void test_rdf()
 	py_float dr = (r1 - r0)/(nbins-1);
 
 	py_int max_id = *std::max_element(ids.begin(), ids.end());
-	list *neighs = new list[max_id+1];
+	std::list<py_int> *neighs = new std::list<py_int>[max_id+1];
 
 	neighborize_impl( x, N, ids, types, r1+0.1, 1,
 	                  xlo, xhi, 3, DIST_BIN, neighs, 0, 0 );
@@ -315,10 +315,10 @@ void test_rdf()
 	fprintf( stdout, "Neighbors:\n");
 	for( py_int i = 0; i < max_id+1; ++i ){
 		my_out << "neighs[ " << i << " ]: ";
-		for ( list::const_iterator j = neighs[i].begin();
+		for ( std::list<py_int>::const_iterator j = neighs[i].begin();
 		      j != neighs[i].end(); ++j ){
 			my_out << *j;
-			list::const_iterator next = j;
+			std::list<py_int>::const_iterator next = j;
 			next++;
 			if( next != neighs[i].end() ){
 				my_out << " --> ";
@@ -367,7 +367,7 @@ void compute_adf( void *px, py_int N, py_int *pids, py_int *ptypes,
 
 	// Make neigh list first:
 	py_int max_id = *std::max_element( ids.begin(), ids.end() );
-	list *neighs = new list[max_id+1];
+	std::list<py_int> *neighs = new std::list<py_int>[max_id+1];
 
 	py_float *xlo = nullptr, *xhi = nullptr;
 	

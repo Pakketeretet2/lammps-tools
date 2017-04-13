@@ -11,20 +11,6 @@
 #include <cmath>
 
 
-template <typename T> inline
-T my_min( T a, T b )
-{
-	return (a < b) ? a : b;
-}
-
-template <typename T> inline
-T my_max( T a, T b )
-{
-	return (a >= b) ? a : b;
-}
-
-
-
 
 void triangulate_impl(const arr3f &, py_int , py_int *, py_int *,
                       py_float , py_int, const py_float *, const py_float *,
@@ -44,18 +30,6 @@ void triangulate( void *x, py_int N, py_int *ids, py_int *types,
 
 }
 
-template <typename T> inline
-T my_max( T* x, py_int size )
-{
-	T x0 = x[0];
-	for( py_int i = 1; i < size; ++i ){
-		if( x0 < x[i] ){
-			x0 = x[i];
-		}
-	}
-	return x0;
-}
-
 double vec_dist( const arr3f &x, int i, int j )
 {
 	double dx = x[i][0] - x[j][0];
@@ -65,7 +39,7 @@ double vec_dist( const arr3f &x, int i, int j )
 }
 
 int insert_triangle( const arr3f &x, int i, int j, int k, int **out,
-                      std::vector<triangle> &triangles, list *neighs )
+                      std::vector<triangle> &triangles, std::list<py_int> *neighs )
 {
 	bool added = 0;
 	if( (i < k) && (j < k) ){
@@ -107,7 +81,7 @@ void triangulate_impl( const arr3f &x, py_int N, py_int *ids, py_int *types,
 	arr1i iids(ids,N);
 	arr1i ttypes(types,N);
 
-	list *neighs = new list[N];
+	std::list<py_int> *neighs = new std::list<py_int>[N];
 	
 	neighborize_impl( x, N, iids, ttypes, rc, periodic, xlo, xhi,
 	                  dims, method, neighs, 0, 0 );
@@ -140,7 +114,7 @@ void triangulate_impl( const arr3f &x, py_int N, py_int *ids, py_int *types,
 	for( py_int ii = 0; ii < N; ++ii ){
 		// loop over all neighs of i1:
 
-		const list &l = neighs[ii];
+		const std::list<py_int> &l = neighs[ii];
 		for( py_int j : l ){
 			if( (ii < j) && (idx_out[ii][j] < 3) ){
 				// Now you got two ids... ids[i] and j. All you need
@@ -187,7 +161,7 @@ void triangulate_block( block_data &b, py_float rc, py_int periodic,
 	arr1i iids(b.ids ,N);
 	arr1i ttypes(b.types ,N);
 	arr3f xx(b.x, N);
-	list *neighs = new list[N];
+	std::list<py_int> *neighs = new std::list<py_int>[N];
 	
 	neighborize_impl( xx, N, iids, ttypes, rc, periodic,
 	                  b.xlo, b.xhi, dims, method, neighs, 0, 0 );
@@ -215,7 +189,7 @@ void triangulate_block( block_data &b, py_float rc, py_int periodic,
 	for( py_int ii = 0; ii < N; ++ii ){
 		// loop over all neighs of i1:
 
-		const list &l = neighs[ii];
+		const std::list<py_int> &l = neighs[ii];
 		for( py_int j : l ){
 			if( (ii < j) && (idx_out[ii][j] < 3) ){
 				// Now you got two ids... ids[i] and j. All you need
@@ -234,7 +208,6 @@ void triangulate_block( block_data &b, py_float rc, py_int periodic,
 					}
 				}
 			}
-			
 		}
 	}
 

@@ -1,7 +1,6 @@
 #include "neighborize.h"
 #include "types.h"
 #include "domain.h"
-#include "list.h"
 #include "my_timer.hpp"
 #include "my_output.hpp"
 #include "dump_reader.h"
@@ -9,6 +8,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <list>
 
 #include <cassert>
 #include <cmath>
@@ -21,7 +21,7 @@ extern "C" {
 
 	
 // \note: This function assumes that the neigh list is build based on
-//        atom indices, not IDS!
+//        atom IDS, not indices!
 void neighborize( void *x, py_int N, py_int *ids,
                   py_int *types, py_float rc, py_int periodic,
                   py_float *xlo, py_float *xhi, py_int dims,
@@ -35,7 +35,7 @@ void neighborize( void *x, py_int N, py_int *ids,
 	
 	arr1i tmp_ids(ids,N);
 	py_int max_id = *std::max_element( tmp_ids.begin(), tmp_ids.end());
-	list *neigh_list = new list[N];
+	std::list<py_int> *neigh_list = new std::list<py_int>[N];
 
 	arr3f xx(x,N);
 	arr1i iids(ids,N), ttypes(types,N);
@@ -101,7 +101,7 @@ void neighborize( void *x, py_int N, py_int *ids,
 void neighborize_impl( const arr3f &x, py_int N, const arr1i &ids,
                        const arr1i &types, py_float rc, py_int periodic,
                        const py_float *xlo, const py_float *xhi, py_int dims,
-                       py_int method, list *neighs,
+                       py_int method, std::list<py_int> *neighs,
                        py_int itype, py_int jtype  )
 {
 	// std::cerr << "Using neighbour method " << method << "\n";
@@ -154,7 +154,7 @@ void neighborize_impl( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_dist_nsq_impl( const arr3f &x, py_int N, const arr1i &ids,
                                 const arr1i &types, py_float rc, py_int periodic,
                                 const py_float *xlo, const py_float *xhi, py_int dims,
-                                list *neighs, py_int itype, py_int jtype  )
+                                std::list<py_int> *neighs, py_int itype, py_int jtype  )
 {
 	
 	double rc2 = rc*rc;
@@ -204,7 +204,7 @@ void neighborize_dist_nsq_impl( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_dist_nsq( const arr3f &x, py_int N, const arr1i &ids,
                            const arr1i &types, py_float rc, py_int periodic,
                            const py_float *xlo, const py_float *xhi, py_int dims,
-                           list *neighs, py_int itype, py_int jtype )
+                           std::list<py_int> *neighs, py_int itype, py_int jtype )
 {
 	neighborize_dist_nsq_impl( x, N, ids, types, rc,
 	                           periodic, xlo, xhi, dims, neighs, itype, jtype );
@@ -245,7 +245,7 @@ biguint shift_bin_index( biguint i0, py_int xinc, py_int yinc, py_int zinc,
 
 void add_neighs_from_bin( py_int i, const arr3f &x, double rc, const arr1i &ids,
                           py_int periodic, const py_float *xlo, const py_float *xhi,
-                          py_int dim, const list &bin, list *neighs,
+                          py_int dim, const std::list<py_int> &bin, std::list<py_int> *neighs,
                           py_int itype, py_int jtype, const arr1i &types )
 {
 	/*
@@ -286,8 +286,8 @@ void loop_bins_make_neighs_2d( const arr3f &x, py_int N, py_float rc,
                                const arr1i &ids, py_int periodic,
                                const py_float *xlo, const py_float *xhi, py_int Nx,
                                py_int Ny, py_int Nz, biguint Nbins,
-                               biguint *bin_indices, list *dom_bins,
-                               list *neighs, py_int itype, py_int jtype,
+                               biguint *bin_indices, std::list<py_int> *dom_bins,
+                               std::list<py_int> *neighs, py_int itype, py_int jtype,
                                const arr1i &types )
 {
 	biguint loop_idx[9];
@@ -316,7 +316,7 @@ void loop_bins_make_neighs_2d( const arr3f &x, py_int N, py_float rc,
 					abort();
 				}
 			}
-			const list &bin = dom_bins[ bin_idx ];
+			const std::list<py_int> &bin = dom_bins[ bin_idx ];
 			add_neighs_from_bin( i, x, rc, ids, periodic, xlo, xhi,
 			                     2, bin, neighs, itype, jtype, types );
 		}
@@ -328,8 +328,8 @@ void loop_bins_make_neighs_3d( const arr3f &x, py_int N, py_float rc,
                                const arr1i &ids, py_int periodic,
                                const py_float *xlo, const py_float *xhi,
                                py_int Nx, py_int Ny, py_int Nz, biguint Nbins,
-                               biguint *bin_indices, list *dom_bins,
-                               list *neighs, py_int itype, py_int jtype,
+                               biguint *bin_indices, std::list<py_int> *dom_bins,
+                               std::list<py_int> *neighs, py_int itype, py_int jtype,
                                const arr1i &types  )
 {
 	biguint loop_idx[27];
@@ -376,7 +376,7 @@ void loop_bins_make_neighs_3d( const arr3f &x, py_int N, py_float rc,
 					abort();
 				}
 			}
-			const list &bin = dom_bins[ bin_idx ];
+			const std::list<py_int> &bin = dom_bins[ bin_idx ];
 			add_neighs_from_bin( i, x, rc, ids, periodic, xlo, xhi,
 			                     3, bin, neighs, itype, jtype, types );
 		}
@@ -420,7 +420,7 @@ void test_bin_shifting()
 void neighborize_dist_bin_impl( const arr3f &x, py_int N, const arr1i &ids,
                                 const arr1i &types, py_float rc, py_int periodic,
                                 const py_float *xlo, const py_float *xhi, py_int dims,
-                                list *neighs, py_int itype, py_int jtype )
+                                std::list<py_int> *neighs, py_int itype, py_int jtype )
 {
 	/* This is more tricky. You need to set up a huge amount of bins... */
 	double pad = 0.3;
@@ -447,7 +447,7 @@ void neighborize_dist_bin_impl( const arr3f &x, py_int N, const arr1i &ids,
 	
 
 	/* Now you need a list for each bin... */
-	list *dom_bins = new list[Nbins];
+	std::list<py_int> *dom_bins = new std::list<py_int>[Nbins];
 	assert(dom_bins && "Failed to space for bins, use neighborize nsq!");
 
 	/* Determine for each particle the bin it needs, add it to that list. */
@@ -494,7 +494,7 @@ void neighborize_dist_bin_impl( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_dist_bin( const arr3f &x, py_int N, const arr1i &ids,
                            const arr1i &types, py_float rc, py_int periodic,
                            const py_float *xlo, const py_float *xhi, py_int dims,
-                           list *neighs, py_int itype, py_int jtype )
+                           std::list<py_int> *neighs, py_int itype, py_int jtype )
 {
 	test_bin_shifting();
 

@@ -126,6 +126,10 @@ class block_data:
         old_max = self.meta.N
         new_id = np.max( self.ids ) + 1
         new_N = self.meta.N + other_block.meta.N
+
+        print("old_max = ", old_max, ", new_N = ", new_N)
+        print("old_max = ", old_max, ", new_N = ", new_N)
+        
         self.grow_arrays_( new_N )
         
         for j in range( old_max, new_N ):
@@ -385,7 +389,6 @@ def block_to_data(b,fname, overwrite = False):
 
     write_mode = "w"    
 
-    
     # Determine some important params for the data file:
     ntypes = np.max( b.types )
     natoms = b.meta.N

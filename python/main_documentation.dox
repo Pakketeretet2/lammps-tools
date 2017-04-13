@@ -2,7 +2,7 @@
 // not pick up on the python way...
 
 /*!
-\mainpage LAMMPS-Tools index
+\mainpage LAMMPS-Tools Python index
 
 \section intro_sec Introduction
 LAMMPS-Tools is a collection of useful analysis tools for LAMMPS. The package
@@ -11,5 +11,9 @@ library performs heavy computions and analysis, while the Python scripts
 glue everything together in a high-level environment.
 
 To see the functionality of the python scripts, check the lammpstools module.
+
+This set of the documentation covers only the Python side.
+For documentation of the C++ API/functionality, see
+<a href="../c_lib/html/index.html">the C++ docs</a>.
 
 */

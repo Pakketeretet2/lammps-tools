@@ -9,7 +9,8 @@
 */
 
 #include "types.h"
-#include "list.h"
+
+#include <list>
 
 extern "C" {
 /*!
@@ -75,7 +76,7 @@ void compute_rdf_impl( const arr3f &x, py_int N, const arr1i &ids,
                        const arr1i &types, py_float x0, py_float x1,
                        py_int nbins, py_int itype, py_int jtype,
                        py_float *xlo, py_float *xhi,
-                       py_int periodic, py_int dim, list *neighs,
+                       py_int periodic, py_int dim, std::list<py_int> *neighs,
                        arr1f &ardf, arr1f &acoord );
 /*!
   \private
@@ -83,6 +84,6 @@ void compute_rdf_impl( const arr3f &x, py_int N, const arr1i &ids,
 */
 void compute_adf_impl( const arr3f &x, py_int N, const arr1i &ids,
                        const arr1i &types, py_int nbins, py_int itype, py_int jtype,
-                       py_float R, list *neighs, arr1f &aadf, arr1f &acoord );
+                       py_float R, std::list<py_int> *neighs, arr1f &aadf, arr1f &acoord );
 
 #endif /* RDF_H */

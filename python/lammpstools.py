@@ -327,7 +327,6 @@ def generate_ensemble_on_manifold( N, typ, domain, manifold_name, manifold_args,
     @param manifold_args  List of arguments to the manifold to create
     @param rc             Minimum distance b.meta.tween created particles. 0 by default
     @param seed           Random seed to use. 1 by default
-    
     """
 
     x       = np.zeros( [N, 3], dtype = np.float64 )
@@ -382,6 +381,7 @@ def distance_diff_blocks( b1, b2, i, j ):
     return domain_distance( b1.meta.domain, xi, xj )
 
 def domain_distance( domain, xi, xj ):
+    """! Calculates the distance between xi and xj according to domain. """
     r  = xi - xj
     Lx = domain.xhi[0] - domain.xlo[0]
     Ly = domain.xhi[1] - domain.xlo[1]
@@ -564,24 +564,9 @@ def triangulation_area( b, triangles ):
 
 
 def dump_to_povray( dump_name, povray_name = None ):
+    """! Creates a povray scene from a dump file. Not finished. """
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     if povray_name is None:
         povray_name = 0
     lammpstools.dump_to_povray( c_char_p(dump_name), c_char_p(povray_name) )
-    
 
-def estimate_line_tension( b, nn_expect, F_per_particle ):
-    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
-    gamma = lammpstools.get_line_tension( void_ptr(b.x), c_longlong(b.meta.N),
-                                          void_ptr(b.ids), void_ptr(b.types),
-                                          c_longlong(b.meta.domain.periodic),
-                                          void_ptr(b.meta.domain.xlo),
-                                          void_ptr(b.meta.domain.xhi),
-                                          c_longlong(3),
-                                          c_longlong(b.meta.t),
-                                          c_char_p( "ff ff ff" ),
-                                          c_longlong(nn_expect),
-                                          c_double(F_per_particle) )
-    return gamma
-                                          
-                                          

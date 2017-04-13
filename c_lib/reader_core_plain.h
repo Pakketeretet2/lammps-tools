@@ -20,6 +20,16 @@ public:
 	{
 		debug = debug;
 	}
+
+	virtual operator bool() const
+	{
+		if( got_file ){
+			return (in && *in);
+		} else {
+			return static_cast<bool>(*in);
+		}
+	}
+	
 private:
 	std::istream *in;
 	bool got_file;

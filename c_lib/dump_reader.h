@@ -25,6 +25,7 @@ public:
 	virtual void rewind();
 
 	virtual void set_debug(bool){}
+	virtual operator bool()  const = 0;
 };
 
 

@@ -8,9 +8,10 @@
   \ingroup  cpp_lib
 */
 
-#include "list.h"
+
 #include "types.h"
 
+#include <list>
 #include <vector>
 
 /*!
@@ -74,7 +75,7 @@ void neighborize_block( const class block_data &b,
 void neighborize_impl( const arr3f &x, py_int N, const arr1i &ids,
                        const arr1i &types, py_float rc, py_int periodic,
                        const py_float *xlo, const py_float *xhi, py_int dims,
-                       py_int method, list *neighs,
+                       py_int method, std::list<py_int> *neighs,
                        py_int itype, py_int jtype );
 
 
@@ -99,7 +100,7 @@ void neighborize_impl( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_dist_nsq( const arr3f &x, py_int N, const arr1i &ids,
                            const arr1i &types, py_float rc, py_int periodic,
                            const py_float *xlo, const py_float *xhi, py_int dims,
-                           list *neighs, py_int itype, py_int jtype  );
+                           std::list<py_int> *neighs, py_int itype, py_int jtype  );
 
 /*!
   @brief Computes a distance-based neighbor list by first binning all
@@ -122,7 +123,7 @@ void neighborize_dist_nsq( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_dist_bin( const arr3f &x, py_int N, const arr1i &ids,
                            const arr1i &types, py_float rc, py_int periodic,
                            const py_float *xlo, const py_float *xhi, py_int dims,
-                           list *neighs, py_int itype, py_int jtype  );
+                           std::list<py_int> *neighs, py_int itype, py_int jtype  );
 
 
 /*!
@@ -142,7 +143,7 @@ void neighborize_dist_bin( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_delaunay( const arr3f &x, py_int N, const arr1i &ids,
                            const arr1i &types, py_int periodic,
                            const py_float *xlo, const py_float *xhi, py_int dims,
-                           list *neighs, py_int itype, py_int jtype );
+                           std::list<py_int> *neighs, py_int itype, py_int jtype );
 
 /*!
   @brief Computes a connectivity list by computing the convex hull of the
@@ -163,7 +164,7 @@ void neighborize_delaunay( const arr3f &x, py_int N, const arr1i &ids,
 void neighborize_conv_hull( const arr3f &x, py_int N, const arr1i &ids,
                             const arr1i &types, py_int periodic,
                             const py_float *xlo, const py_float *xhi, py_int dims,
-                            list *neighs, py_int itype, py_int jtype  );
+                            std::list<py_int> *neighs, py_int itype, py_int jtype  );
 
 
 

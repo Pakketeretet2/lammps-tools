@@ -60,6 +60,12 @@ public:
 	
 	void get_char_data( char *dest, uint n );
 	unsigned long int get_current_byte();
+
+	virtual operator bool() const
+	{
+		return in && *in;
+	}
+	
 	
 private:
 	std::istream *in;
