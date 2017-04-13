@@ -3,7 +3,7 @@
 
 
 
-bool dump_interpreter_dcd::next_block( reader_core *r, block_data &block )
+int dump_interpreter_dcd::next_block( reader_core *r, block_data &block )
 {
 	bool success = false;
 
@@ -11,6 +11,12 @@ bool dump_interpreter_dcd::next_block( reader_core *r, block_data &block )
 	reader_core_bin *rb = dynamic_cast<reader_core_bin*>(r);
 	if( !rb ){
 		std::cerr << "Dynamic cast of reader_core to reader_core_bin!\n";
+	}
+	if( rb->peek() == EOF ){
+		if( rb ){
+			// Assume at EOF?
+			return 1;
+		}
 	}
 
 
@@ -95,6 +101,6 @@ bool dump_interpreter_dcd::next_block( reader_core *r, block_data &block )
 		std::cerr << "(x,y,z) = ( " << x << ", " << y << ", "
 		          << z << " ).\n";
 	}
-	return success;
+	return 0;
 }
 	

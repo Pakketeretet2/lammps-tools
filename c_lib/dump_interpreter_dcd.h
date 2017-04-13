@@ -18,7 +18,7 @@ public:
 	virtual ~dump_interpreter_dcd(){}
 
 	
-	virtual bool next_block( reader_core *r, block_data &block );
+	virtual int next_block( reader_core *r, block_data &block );
 	
         
 	

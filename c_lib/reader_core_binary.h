@@ -65,6 +65,11 @@ public:
 	{
 		return in && *in;
 	}
+
+	virtual int peek()
+	{
+		return in->peek();
+	}
 	
 	
 private:

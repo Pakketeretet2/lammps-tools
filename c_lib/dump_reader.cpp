@@ -65,7 +65,7 @@ void reader_core::rewind()
 }
 
 
-bool dump_interpreter::next_block( reader_core *r, block_data &block )
+int dump_interpreter::next_block( reader_core *r, block_data &block )
 {
 	std::cerr << "Do not use dump_interpreter directly! "
 	          << "Use a derived class!\n";
@@ -73,7 +73,7 @@ bool dump_interpreter::next_block( reader_core *r, block_data &block )
 	return false;
 }
 
-bool dump_interpreter::next_block_meta( reader_core *r, block_data &block )
+int dump_interpreter::next_block_meta( reader_core *r, block_data &block )
 {
 	std::cerr << "Do not use dump_interpreter directly! "
 	          << "Use a derived class!\n";
@@ -81,7 +81,7 @@ bool dump_interpreter::next_block_meta( reader_core *r, block_data &block )
 	return false;
 }
 
-bool dump_interpreter::next_block_body( reader_core *r, block_data &block )
+int dump_interpreter::next_block_body( reader_core *r, block_data &block )
 {
 	std::cerr << "Do not use dump_interpreter directly! "
 	          << "Use a derived class!\n";
@@ -90,17 +90,17 @@ bool dump_interpreter::next_block_body( reader_core *r, block_data &block )
 }
 
 
-bool dump_interpreter::last_block( reader_core *r, block_data &block )
+int dump_interpreter::last_block( reader_core *r, block_data &block )
 {
 	block_data last_block;
-	bool success = next_block( r, block );
-	if( success ){
+	int status = next_block( r, block );
+	if( !status ){
 		do{
 			last_block = block;
 		}while( next_block( r, block ) );
-		return success;
+		return 0;
 	}else{
-		return false;
+		return -1;
 	}
 }
 
@@ -243,11 +243,11 @@ bool dump_reader::next_block( block_data &block )
 
 bool dump_reader::last_block( block_data &block )
 {
-	bool success = interp->next_block( reader, block );
-	if( !success ) return false;
+	int status = interp->next_block( reader, block );
+	if( status ) return false;
 	
-	while( success ){
-		success = interp->next_block( reader, block );
+	while( !status ){
+		status = interp->next_block( reader, block );
 	}
 	return true;
 }
@@ -256,12 +256,12 @@ bool dump_reader::last_block( block_data &block )
 
 bool dump_reader::skip_blocks( int Nblocks )
 {
-	bool success = false;
+	int status = 0;
 	for( int i = 0; i < Nblocks; ++i ){
 		block_data b;
-		success = interp->next_block_meta( reader, b );
-		if( !success ){
-			return success;
+		status = interp->next_block_meta( reader, b );
+		if( status ){
+			return false;
 		}
 		// line is at "ITEM: TIMESTEP now. Skip b.N + 1 line."
 		std::string tmp;
@@ -269,14 +269,14 @@ bool dump_reader::skip_blocks( int Nblocks )
 			reader->getline( tmp );
 		}
 	}
-	return success;
+	return ( status == 0 );
 }
 
 
 bool dump_reader::skip_block ( )
 {
 	block_data b;
-	return next_block( b );
+	return next_block( b ) == 0;
 }
 
 
@@ -326,17 +326,22 @@ void release_dump_reader_handle( dump_reader_handle *dh )
 bool dump_reader_next_block( dump_reader_handle *dh )
 {
 	block_data block;
-	std::cerr << "Calling next_block on dh @ " << dh << "\n";
-	bool status = dh->reader->next_block( block );
-	if( !status ){
-		std::cerr << "Failed to get next block\n";
-		return false;
+	// std::cerr << "Calling next_block on dh @ " << dh << "\n";
+	int status = dh->reader->next_block( block );
+	if( status ){
+		if( status > 0 ){
+			std::cerr << "Dump file at EOF.\n";
+			return false;
+		}else{
+			std::cerr << "Failed to get next block\n";
+			return false;
+		}
 	}
 	
 	// std::cerr << "Got next block of " << block.N
 	//           << " particles at time " << block.tstep << ".\n";
 	block_data *address = dh->last_block;
-	std::cerr << "Got next block, it's @ " << address << "\n";
+	// std::cerr << "Got next block, it's @ " << address << "\n";
 	*address = block;
 	return true;
 }

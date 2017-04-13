@@ -58,7 +58,7 @@ int dump_interpreter_gsd::get_chunk_data( const std::string &name, void *dest )
 }
 
 
-bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
+int dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 {
 	++current_frame;
 	const gsd_index_entry *entry;
@@ -72,7 +72,6 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 
 	bool default_type = false;
 	
-	
 	status = get_chunk_data( "configuration/step", &tstep );
 	status = get_chunk_data( "configuration/dimensions", &dims );
 	status = get_chunk_data( "configuration/box", box );
@@ -80,7 +79,7 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 
 	if( status ){
 		MY_CERR << "An error occured!\n";
-		return false;
+		return -1;
 	}
 
 	b.tstep = tstep;
@@ -172,6 +171,6 @@ bool dump_interpreter_gsd::next_block( reader_core *, block_data &b )
 	delete [] x;
 	delete [] type_ids;
 	
-	return true;
+	return 0;
 	
 }

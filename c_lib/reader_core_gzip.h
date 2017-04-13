@@ -25,6 +25,11 @@ public:
 	{
 		return static_cast<bool>(infile);
 	}
+
+	virtual int peek()
+	{
+		return in.peek();
+	}
 	
 	
 private:

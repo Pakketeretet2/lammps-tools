@@ -29,6 +29,11 @@ public:
 			return static_cast<bool>(*in);
 		}
 	}
+
+	virtual int peek()
+	{
+		return in->peek();
+	}
 	
 private:
 	std::istream *in;

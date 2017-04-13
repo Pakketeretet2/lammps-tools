@@ -26,6 +26,7 @@ public:
 
 	virtual void set_debug(bool){}
 	virtual operator bool()  const = 0;
+	virtual int peek() = 0;
 };
 
 
@@ -35,13 +36,13 @@ public:
 	dump_interpreter(){}
 	virtual ~dump_interpreter(){}
 
-	virtual bool next_block( reader_core *r, block_data &block );
-	virtual bool last_block( reader_core *r, block_data &block );
+	virtual int next_block( reader_core *r, block_data &block );
+	virtual int last_block( reader_core *r, block_data &block );
 
 	///< Calling next_block_meta only leaves the block in a half-
 	///< half-initialised state! You can read out the meta but not the rest.
-	virtual bool next_block_meta( reader_core *r, block_data &block );
-	virtual bool next_block_body( reader_core *r, block_data &block );
+	virtual int next_block_meta( reader_core *r, block_data &block );
+	virtual int next_block_body( reader_core *r, block_data &block );
 	
 
 	struct block_meta {

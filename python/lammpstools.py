@@ -31,7 +31,7 @@ from fit_einstein_crystal import *
 from multiprocessing      import Process
 from ribbon_analysis      import *
 from compute_com          import compute_com, compute_com_cpp
-
+from bond_analysis        import *
 
 def compute_rdf( b, r0, r1, nbins, itype, jtype, dims, method = None ):
     """!Computes the RDF of atoms of types itype and jtype from block data b

@@ -14,23 +14,28 @@ import math
 
 ## Computes the \p psi_n order parameter for each atom, and the average.
 #
-#  \param b      block_data to determine \p psi_n for
-#  \param axis   Axis with respect to which \p psi_n should be calculated
-#  \param rc     Cut-off for constructing the neighbour list, if any
-#  \param order  Order of \p psi_n, i.e., the n in \Psi_n
-#  \param normal Out of plane axis, i.e., each bond vector is
-#                projected onto the plane with this normal.
-#  \param dims   Dimensions of the system.
-#  \param itype  Consider only bonds between types \p i...
-#  \param jtype  ... and \p j.
-#  \param method Method used for neighbourising.
-#  \param neighs Pre-calculated neighbour list. This saves computation time.
-#  \param quiet  Be quiet or print stuff?
+#  \param b       block_data to determine \p psi_n for
+#  \param axis    Axis with respect to which \p psi_n should be calculated
+#  \param order   Order of \f$\Psi_n\f$, i.e., the \f$n\f$ in \f$\Psi_n\f$
+#  \param normal  Out of plane axis, i.e., each bond vector is
+#                 projected onto the plane with this normal.
+#  \param rc      Cut-off for constructing neighbour list.
+#  \param itype   Consider only bonds between types \p i...
+#  \param jtype   ... and \p j.
+#  \param method  Method used for neighbourising.
+#  \param neighs  Pre-calculated neighbour list. This saves computation time.
+#  \param quiet   Be quiet?
 #
-# Calculates the bond order parameter for all particles.
-def compute_psi_n( b, axis, rc, order, normal = np.array( [0.0, 0.0, 1.0] ),
-                   dims = 3, itype = 0, jtype = 0, method = 0,
+#  \returns The average bond order parameter \f$\left<|\Psi_n|\right>\f$
+#           and a numpy array of the individual \f$\Psi_n\f$ values.
+#           The entries are in principle complex, the array contains the
+#           real and imaginary parts and the absolute value, in that order.
+#
+# Calculates the \f$\Psi_n\f$ bond order parameter for all particles.
+def compute_psi_n( b, axis, order, normal, rc, 
+                   itype = 0, jtype = 0, method = 0,
                    neighs = None, quiet = True ):
+    """ Calculates the \Psi_n order parameter. """
     if neighs is None:
         neighs = lammpstools.neighborize( b, rc, dims, method, itype, jtype )
 
@@ -95,11 +100,10 @@ def compute_psi_n( b, axis, rc, order, normal = np.array( [0.0, 0.0, 1.0] ),
 ## Computes the rotation \p theta of the vector x about
 #  axis1 in plane defined by normal.
 #
-#  \param x      Vector whose angle to calculate w.r.t. \p axis
-#  \param axis   Axis that defines angle of x.
-#  \param normal Defines the plane in which to calculate the angle.
+#  \param x       Vector whose angle to calculate w.r.t. \p axis
+#  \param axis    Axis that defines angle of x.
+#  \param normal  Defines the plane in which to calculate the angle.
 #
-# More details.
 def get_theta( x, axis, normal ):
     """ Determine part along and perpendicular to axis. """
     xa = np.dot(x,axis) * axis /np.dot(axis,axis)
@@ -125,3 +129,34 @@ def get_theta( x, axis, normal ):
     return theta
 
 
+
+## Calculates info on bond statistics.
+#
+#  \param b       block_data to determine statistics for
+#  \param rc      Cut-off for constructing the neighbour list, if any
+#  \param itype   Consider only bonds between types \p itype...
+#  \param jtype   ... and \p jtype (0 for any).
+#  \param method  Method used for neighbourising.
+#  \param neighs  Pre-calculated neighbour list. This saves computation time.
+#
+def get_bond_stats( b, rc, itype = 0, jtype = 0, method = 0, neighs = None ):
+    """ Calculates statistics on the bonding of atoms of type i and j. """
+    if neighs is None:
+        neighs = lammpstools.neighborize( b, rc, 3, method, itype, jtype )
+
+    im = lammpstools.make_id_map( b.ids )
+    print("t = ", b.meta.t)
+    for ni in neighs:
+        idi = ni[0]
+        idx = im[idi]
+        if itype and (b.types[idx] != itype):
+            continue
+        if len(ni) < 2:
+            continue
+        
+        print("    Neighs of ", ni[0], ", (type ", b.types[idi], " ):" ,end="")
+        
+        for i in range(1,len(ni)):
+            print(" ",ni[i],end="")
+        print("")
+        

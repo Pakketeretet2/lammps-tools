@@ -13,10 +13,10 @@ public:
 	                            scaled(0)
 	{}
 	virtual ~dump_interpreter_lammps(){}
-	virtual bool next_block( reader_core *r, block_data &block );
+	virtual int next_block( reader_core *r, block_data &block );
 
-	virtual bool next_block_meta( reader_core *r, block_data &block );
-	virtual bool next_block_body( reader_core *r, block_data &block );
+	virtual int next_block_meta( reader_core *r, block_data &block );
+	virtual int next_block_body( reader_core *r, block_data &block );
 	
 	
 private:

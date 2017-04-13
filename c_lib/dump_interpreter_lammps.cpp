@@ -2,12 +2,10 @@
 
 #include "util.h"
 
-bool dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block )
+int dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block )
 {
 	bool success = false;
 	std::string line;
-	r->set_debug(true);
-	
 	
 	
 	while( r->getline( line ) ){
@@ -40,7 +38,7 @@ bool dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block
 		}else{
 			std::cerr << "Encountered line '" << line
 			          << "' and have no clue what to do!\n";
-			return false;
+			return -1;
 		}
 	}
 
@@ -58,10 +56,10 @@ bool dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block
 		block.N      = last_meta.N;
 		
 	}
-	return success;
+	return 0;
 }
 
-bool dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block )
+int dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block )
 {
 	std::string line = last_line;
 	py_int N = last_meta.N;
@@ -151,29 +149,33 @@ bool dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block
 		// std::cerr << "Block has atom_style " << block.atom_style << ".\n";
 
 		
-		return true;
+		return 0;
 		
 	}else{
 		// std::cerr << "Encountered unknown header!\n";
 		// std::cerr << line << "\n";
-		return false;
+		return -1;
 	}
-	return false;
 }
 
        
 
 
 
-bool dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
+int dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
 {
-	bool success = false;
-	success = next_block_meta( r, block );
-	if( success ){
+	if( r->peek() == EOF ){
+		if( r ){
+			// Assume at EOF?
+			return 1;
+		}
+	}
+	int status = next_block_meta( r, block );
+	if( !status ){
 		return next_block_body( r, block );		
 	}else{
 		std::cerr << "Failed to get meta!\n";
-		return false;
+		return -1;
 	}
 }
 
