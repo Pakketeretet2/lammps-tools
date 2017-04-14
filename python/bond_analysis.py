@@ -159,7 +159,7 @@ def get_bond_stats( b, rc, itype = 0, jtype = 0, method = 0, neighs = None ):
         for idj in ni[1:]:
             jdx = im[idj]
             xj = b.x[jdx]
-            rij = lammpstools.distance( b, xi, xj )
+            rij = b.domain.distance( xi, xj )
 
             bonds.append( idi, idj, math.sqrt( np.dot(rij, rij) ) )
     return bonds

@@ -51,9 +51,9 @@ class domain_data:
             elif r[2] <= -0.5*Lz:
                 r[2] += Lz
                 
-    dist = np.linalg.norm(r)
-    
-    return dist, r
+        dist = np.linalg.norm(r)
+        
+        return dist, r
 
 
 class block_meta:

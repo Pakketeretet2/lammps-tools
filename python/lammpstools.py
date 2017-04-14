@@ -1,24 +1,11 @@
 """!
-\defgroup lammpstools
-This module contains all Python-side tools for analysis of LAMMPS data.
+\file lammpstools.py
+\module lammpstools.py
 
-@package lammpstools
-This package defines the python interface to the C++ lib and some
-(higher level) analysis tools written in Python itself.
-
-\ingroup lammpstools
+This module contains some of the basic analysis stuff. Eventually it
+will be more organised.
 """
 
-import numpy as np, struct, time, math, sys, os, multiprocessing
-
-from ctypes    import *
-from typecasts import *
-
-
-# Import all submodules:
-import histogram, normal_mode_analysis, melting_analysis, minimum_rmsd, \
-    fit_einstein_crystal, multiprocessing, ribbon_analysis, compute_com, \
-    bond_analysis, potentials, makepairtable, block_data
 
 
 ## Computes the RDF of atoms of types itype and jtype from block data b
@@ -36,8 +23,8 @@ import histogram, normal_mode_analysis, melting_analysis, minimum_rmsd, \
 def compute_rdf( b, r0, r1, nbins, itype, jtype, dims, method = None ):
     """ Computes the RDF of atoms of types itype and jtype for block_data b. """
 
-    rdf    = np.zeros(nbins, dtype=np.float64);
-    coords = np.zeros(nbins, dtype=np.float64);
+    rdf    = np.zeros(nbins, dtype=np.float64)
+    coords = np.zeros(nbins, dtype=np.float64)
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     if method is None:
         # Guess a good method based on b.meta.N:
@@ -52,7 +39,7 @@ def compute_rdf( b, r0, r1, nbins, itype, jtype, dims, method = None ):
                              c_longlong(b.meta.domain.periodic), c_longlong(dims),
                              c_longlong(method), void_ptr(rdf), void_ptr(coords) )
 
-    pts = np.zeros(nbins,dtype=np.float64);
+    pts = np.zeros(nbins,dtype=np.float64)
     for i in range(0,nbins):
         pts[i] = r0 + (r1-r0)*i/float(nbins-1)
     return pts, rdf, coords
@@ -71,8 +58,8 @@ def compute_rdf( b, r0, r1, nbins, itype, jtype, dims, method = None ):
 #
 def compute_adf( b, R, nbins, itype, jtype, method = None ):
     """ Computes ADF of atoms of types itype and jtype from block_data. """
-    adf    = np.zeros(nbins, dtype=np.float64);
-    coords = np.zeros(nbins, dtype=np.float64);
+    adf    = np.zeros(nbins, dtype=np.float64)
+    coords = np.zeros(nbins, dtype=np.float64)
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     if method is None:
         print("Please set method explicitly.", file = sys.stderr)
@@ -84,7 +71,7 @@ def compute_adf( b, R, nbins, itype, jtype, method = None ):
                              c_double(R), c_longlong(method), void_ptr(adf),
                              void_ptr(coords) )
     
-    pts = np.zeros(nbins,dtype=np.float64);
+    pts = np.zeros(nbins,dtype=np.float64)
     for i in range(0,nbins):
         pts[i] = math.pi * i / float(nbins-1)
     return pts, adf, coords
@@ -148,7 +135,7 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
                 
                 if byte == '' or byte == b'':
                     # Out of data apparently.
-                    break;
+                    break
 
                 x = struct.unpack(int_fmt,byte)[0]
                 ints_read += 1
@@ -491,7 +478,7 @@ def triangulate( b, rc, dims, method = None ):
 
                 if line == '':
                     # Out of data apparently.
-                    break;
+                    break
                 words = line.split()
                 t1 = int(words[0])
                 t2 = int(words[1])

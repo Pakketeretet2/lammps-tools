@@ -70,8 +70,7 @@ class quat:
     
     def __getitem__( self, idx ):
         if idx < 0 or idx > 3:
-            print >> sys.stderr, "Index out of bounds!"
-            return None
+            raise RuntimeError("Index out of bounds!")
 
         if idx == 0:
             return self.r
@@ -102,7 +101,7 @@ class quat:
     
 
     def print_me(self):
-        print "[ ", self.r, " ", self.u, " ", self.v, " ", self.w, " ]"
+        print("[ ", self.r, " ", self.u, " ", self.v, " ", self.w, " ]")
 
 
     def init_from_spherical(self, x, y, z):
@@ -136,7 +135,8 @@ def rot_vector( v, axis, angle ):
 
     # Check:
     if abs(qr[0]) > 1e-8:
-        print >> sys.stderr, "Real part of rotated quaternion too large! ", qr[0], " > ", 1e-8
+        print("Real part of rotated quaternion too large! ", qr[0],
+              " > ", 1e-8, file = sys.stderr)
     
     vrot = np.array( [ qr[1], qr[2], qr[3] ] )
 
@@ -165,20 +165,20 @@ def test_quat():
 
     # To see if it works as expected, rotate q5 over q6 with
     # 90 degrees, should get -e_x.
-    print "(0, 0, 1) about (0, 1, 0) with pi"
+    print("(0, 0, 1) about (0, 1, 0) with pi")
     v = rot_vector( np.array( [ 0., 0, 1 ] ), np.array( [ 0., 1, 0 ] ), math.pi )
-    print "Got       %f %f %f" % (v[0], v[1], v[2])
-    print "Should be %f %f %f" % (0, 0, -1)
+    print("Got       %f %f %f" % (v[0], v[1], v[2]))
+    print("Should be %f %f %f" % (0, 0, -1))
 
-    print ""
-    print "(0, 0, 1) about (0, 1, 0) with pi/2"
+    print("")
+    print("(0, 0, 1) about (0, 1, 0) with pi/2")
     v = rot_vector( np.array( [ 0., 0, 1 ] ), np.array( [ 0., 1, 0 ] ), math.pi/2.0 )
-    print "Got       %f %f %f" % (v[0], v[1], v[2])
-    print "Should be %f %f %f" % (1,0,0)
+    print("Got       %f %f %f" % (v[0], v[1], v[2]))
+    print("Should be %f %f %f" % (1,0,0))
 
-    print ""
-    print "(0, 0, 1) about (1, 1, 0) with pi"
+    print("")
+    print("(0, 0, 1) about (1, 1, 0) with pi")
     v = rot_vector( np.array( [ 0, 0, 1. ] ), np.array( [ 1., 1, 0 ] ), math.pi )
-    print "Got       %f %f %f" % (v[0], v[1], v[2])
-    print "Should be %f %f %f" % (0, 0, -1)
+    print("Got       %f %f %f" % (v[0], v[1], v[2]))
+    print("Should be %f %f %f" % (0, 0, -1))
     
