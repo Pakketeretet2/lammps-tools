@@ -9,7 +9,8 @@ install :
 	$(MAKE) -C c_lib install
 
 dox :
-	@cd c_lib && doxygen;
+	@cd c_lib  && doxygen;
+	@cd python && doxygen;
 	doxygen
 	ln -s --force ./html/index.html manual.html
 

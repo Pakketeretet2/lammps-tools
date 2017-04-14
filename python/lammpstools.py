@@ -9,44 +9,33 @@ This package defines the python interface to the C++ lib and some
 \ingroup lammpstools
 """
 
+import numpy as np, struct, time, math, sys, os, multiprocessing
 
-from ctypes import *
-import numpy as np
+from ctypes    import *
 from typecasts import *
-from potentials import *
-from makepairtable import *
-from block_data import *
 
-import struct              # For nice unpacking of binary data
-import time
-import math
 
-from histogram            import *
-from normal_mode_analysis import normal_mode_analysis
-from normal_mode_analysis import normal_mode_analysis_clib
-from melting_analysis     import lindemann
-from minimum_rmsd         import minimum_rmsd_rotate
-from minimum_rmsd         import rotate_to_template
-from fit_einstein_crystal import *
-from multiprocessing      import Process
-from ribbon_analysis      import *
-from compute_com          import compute_com, compute_com_cpp
-from bond_analysis        import *
+# Import all submodules:
+import histogram, normal_mode_analysis, melting_analysis, minimum_rmsd, \
+    fit_einstein_crystal, multiprocessing, ribbon_analysis, compute_com, \
+    bond_analysis, potentials, makepairtable, block_data
 
+
+## Computes the RDF of atoms of types itype and jtype from block data b
+#
+#  \param b          Block of data to compute RDF for
+#  \param r0         Inner cutoff radius where RDF is computed
+#  \param r1         Outer cutoff radius where RDF is computed
+#  \param nbins      Number of bins to use, so resolution \f$ dr =
+#                    (r1 - r0)/(nbins-1) \f$
+#  \param itype      Type of atoms 1 to consider (0 for all)
+#  \param jtype      Type of atoms 2 to consider (0 for all)
+#  \param dims       Dimension of simulation box (used in normalisation)
+#  \param method     Neighborisation method to use.
+#
 def compute_rdf( b, r0, r1, nbins, itype, jtype, dims, method = None ):
-    """!Computes the RDF of atoms of types itype and jtype from block data b
-       for r0 <= r <= r1.
+    """ Computes the RDF of atoms of types itype and jtype for block_data b. """
 
-    @param b          Block of data to compute RDF for
-    @param r0         Inner cutoff radius where RDF is computed
-    @param r1         Outer cutoff radius where RDF is computed
-    @param nbins      Number of bins to use, so resolution dr = (r1 - r0)/(nbins-1)
-    @param itype      Type of atoms 1 to consider (0 for all)
-    @param jtype      Type of atoms 2 to consider (0 for all)
-    @param dims       Dimension of simulation box (used in normalisation)
-    @param method     Neighborization method to use. Defaults to distance (either
-                      binned or not, depending on the size of b.meta.N)
-    """
     rdf    = np.zeros(nbins, dtype=np.float64);
     coords = np.zeros(nbins, dtype=np.float64);
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
@@ -69,19 +58,19 @@ def compute_rdf( b, r0, r1, nbins, itype, jtype, dims, method = None ):
     return pts, rdf, coords
 
 
-
+## Computes the ADF of atoms of types itype and jtype from block data b
+#  for particles on a sphere of radius R.
+# 
+# @param b          Block of data to compute ADF for
+# @param R          Radius of template
+# @param nbins      Number of bins to use, so resolution dr = (r1 - r0)/(nbins-1)
+# @param itype      Type of atoms 1 to consider (0 for all)
+# @param jtype      Type of atoms 2 to consider (0 for all)
+# @param method     Neighborization method to use. Defaults to distance (either
+#                   binned or not, depending on the size of b.meta.N)
+#
 def compute_adf( b, R, nbins, itype, jtype, method = None ):
-    """!Computes the ADF of atoms of types itype and jtype from block data b
-        for particles on a sphere of radius R.
-
-    @param b          Block of data to compute ADF for
-    @param R          Radius of template
-    @param nbins      Number of bins to use, so resolution dr = (r1 - r0)/(nbins-1)
-    @param itype      Type of atoms 1 to consider (0 for all)
-    @param jtype      Type of atoms 2 to consider (0 for all)
-    @param method     Neighborization method to use. Defaults to distance (either
-                      binned or not, depending on the size of b.meta.N)
-    """
+    """ Computes ADF of atoms of types itype and jtype from block_data. """
     adf    = np.zeros(nbins, dtype=np.float64);
     coords = np.zeros(nbins, dtype=np.float64);
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
@@ -101,18 +90,15 @@ def compute_adf( b, R, nbins, itype, jtype, method = None ):
     return pts, adf, coords
 
 
-
+# Makes a neighbor list of all particles in block.
+# 
+# @param b         Block of data to neighborize
+# @param rc        Cut-off for distance criterion (ignored if not needed)
+# @param dims      DImensions of simulation box
+# @param method    Neighborization method to use. 
+# 
 def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
                  quiet = True ):
-    """!Makes a neighbor list of all particles in block.
-    
-    @param b         Block of data to neighborize
-    @param rc        Cut-off for distance criterion (ignored if not needed)
-    @param dims      DImensions of simulation box
-    @param method    Neighborization method to use. Defaults to distance
-                     (either binned or not, depending on the size of b.n)
-    """
-
     if method is None:
         # Guess a good method based on b.meta.N:
         if b.meta.N < 200: method = 0
@@ -145,7 +131,7 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
                                     c_longlong(method), pname_buffer,
                                     c_longlong(itype), c_longlong(jtype))
 
-        p = Process(target = start_neigh)
+        p = multiprocessing.Process(target = start_neigh)
         p.start()
 
         # Read in the file and store in neighs
@@ -185,40 +171,14 @@ def neighborize( b, rc, dims, method = None, itype = 0, jtype = 0,
     return neighs
 
 
-def topological_defects( b, n, nn0 = 6 ):
-    """"! Determines the number of topological defects for each particle and
-          returns a dump_col containing them per particle in block.
 
-    @param b    Block to determine the topological charges of
-    @param n    Neighbor list corresponding to given block.
-    @param nn0  The expected number of neighbours, i.e., particles with
-                number of neighbours == nn0 will have charge 0.
-    
-    """
-    Qs = np.zeros(b.meta.N, dtype=int)
-    i = 0
-    Qtot = 0
-    for ni in n:
-        nns = len(ni) - 1
-        q   = nn0 - nns
-        Qs[i] = q
-        i += 1
-        Qtot += q
-    
-    dc = dump_col("q", Qs)
-
-    return dc, Qtot
-
-
-
+## Makes an id map in an associative array.
+#  The map contains at id_map[ iid ] the index of
+#  atom data belonging to  atom with id = iid.
+#
+#  \param b  The array of ids to make the map out of.
+#
 def make_id_map( ids, largest_id = None ):
-    """! Makes an id map in an associative array.
-         The map contains at id_map[ iid ] the index of
-         atom data belonging to  atom with id = iid.
-
-    @param b  The array of ids to make the map out of.
-    """
-
     if largest_id is None:
         Nids = np.max(ids)
         largest_id = Nids
@@ -231,15 +191,14 @@ def make_id_map( ids, largest_id = None ):
 
 
 
-
+## Attempts to identify clusters, based on a threshold criterion.
+# 
+#  \param neighs  Neighbor list to identify clusters in
+#  \param ids     List of ids present in neighs
+#  \param thresh  Cluster size threshold, i.e., only
+#                 clusters of size >= thresh are returned.
 def find_clusters( neighs, ids, thresh = 1 ):
-    """! Attempts to identify clusters, based on a threshold criterion.
 
-    @param neighs  Neighbor list to identify clusters in
-    @param ids     List of ids present in neighs
-    @param thresh  Cluster size threshold, i.e., only
-                   clusters of size >= thresh are returned.
-    """
     max_id = max(ids)
 
     ids_out = np.zeros(max_id+1,dtype=int)
@@ -284,12 +243,14 @@ def find_clusters( neighs, ids, thresh = 1 ):
     return clusters_f
 
 
-
+## Creates a block_data object for only those particles in the original
+#  block_data \p block that are also in cluster \p cluster.
+# 
+#  \param block   Original block to select particles from
+#  \param cluster Cluster that ocntains only the particles that should
+#                 be in the new \p block_data
+#
 def cluster_to_block_data( block, cluster ):
-    """! Transforms given cluster info and block into a new block
-         that contains only the atoms that were also in cluster.
-    """
-
     n_parts = len(cluster)
 
     ids   = np.empty(n_parts,dtype = int)
@@ -317,18 +278,17 @@ def cluster_to_block_data( block, cluster ):
     return b_filt
 
 
+## Generates an ensemble of particles on given manifold.
+# 
+# @param N              Number of particles to create
+# @param type           Type of the particles to create
+# @param domain         Domain to generate particles in
+# @param manifold_name  Name of the manifold to generate particles on
+# @param manifold_args  List of arguments to the manifold to create
+# @param rc             Minimum distance b.meta.tween created particles. 0 by default
+# @param seed           Random seed to use. 1 by default
+# 
 def generate_ensemble_on_manifold( N, typ, domain, manifold_name, manifold_args, rc = 0.0, seed = 1 ):
-    """! Generates an ensemble of particles on given manifold.
-
-    @param N              Number of particles to create
-    @param type           Type of the particles to create
-    @param domain         Domain to generate particles in
-    @param manifold_name  Name of the manifold to generate particles on
-    @param manifold_args  List of arguments to the manifold to create
-    @param rc             Minimum distance b.meta.tween created particles. 0 by default
-    @param seed           Random seed to use. 1 by default
-    """
-
     x       = np.zeros( [N, 3], dtype = np.float64 )
     ids_arr = np.zeros( N,      dtype = int )
     types   = np.zeros( N,      dtype = int )
@@ -354,31 +314,34 @@ def generate_ensemble_on_manifold( N, typ, domain, manifold_name, manifold_args,
     return block_data( meta, ids_arr, types, x )
     
 
-def test_ensemble_generator( ):
 
-    d = domain_data( np.array( [-5,-5,-5] ), np.array( [5,5,5] ), 0, "ff ff ff")
-    
-    b = generate_ensemble_on_manifold( 24, 1, d, "sphere", [ "2.0" ], 1.0 )
-
-    print(b.meta.N)
-    for i in range(0,b.meta.N):
-        print("(%f, %f, %f)" % (b.x[i][0], b.x[i][1], b.x[i][2]))
-
-    block_to_dump( b, "test.dump" )
-
-
+## Computes the shortest distance between atoms indices i and j in block.
+#
+#  \param b block_data to calculate distance in.
+#  \param i Index of particle i
+#  \param j Index of particle j
+#  
 def distance( b, i, j ):
-    """ !Computes the shortest distance between atoms indices i and j in block. """
+    """ ! """
     xi = b.x[i]
     xj = b.x[j]
 
     return domain_distance( b.meta.domain, xi, xj )
 
+## Computes the shortest distance between atoms indices i and j
+#  in different blocks
+#
+#  \param b block_data to calculate distance in.
+#  \param i Index of particle i
+#  \param j Index of particle j
+#  
 def distance_diff_blocks( b1, b2, i, j ):
     """ !Computes the shortest distance between atoms i in block b1 and j in block b2. """
     xi = b1.x[i]
     xj = b2.x[j]
     return domain_distance( b1.meta.domain, xi, xj )
+
+
 
 def domain_distance( domain, xi, xj ):
     """! Calculates the distance between xi and xj according to domain. """
@@ -407,6 +370,7 @@ def domain_distance( domain, xi, xj ):
     dist = np.linalg.norm(r)
     
     return dist, r
+
 
 def block_filter( block, indices ):
     """ !Returns a block containing only the listed indices. """
@@ -439,8 +403,8 @@ def block_filter( block, indices ):
 
     for k in range(0,Ncols):
         bmod.other_cols[k].N = len(bmod.other_cols[k].data)
-
     return bmod
+
 
 
 def recenter( b, rescale_box = False ):
@@ -487,6 +451,8 @@ def recenter( b, rescale_box = False ):
         return b
     else:
         return b
+
+
 
 def triangulate( b, rc, dims, method = None ):
     """ ! Triangulates given block. """
@@ -561,12 +527,3 @@ def triangulation_area( b, triangles ):
         A  += aaa
         it += 1
     return A
-
-
-def dump_to_povray( dump_name, povray_name = None ):
-    """! Creates a povray scene from a dump file. Not finished. """
-    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
-    if povray_name is None:
-        povray_name = 0
-    lammpstools.dump_to_povray( c_char_p(dump_name), c_char_p(povray_name) )
-

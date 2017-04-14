@@ -1,0 +1,18 @@
+/*!
+\mainpage LAMMPS-Tools main index
+
+\section intro_sec Introduction
+LAMMPS-Tools consists of two parts: A bunch of python tools and a C++ library
+backend. The C++ part does the "heavy lifting" through a minimal C interface.
+This interface can also be used for use in other C/C++ programs.
+
+The Python part provides a scripting interface and some functionality that is
+not ported to C++ yet. I typically start writing stuff in Python and then at
+some point port it to C++ if it's slow.
+
+I aim to provide a complete documentation of both sides as best as I can.
+
+For the Python documentation, see <a href="../python/html/index.html">the Python docs</a>.
+For the C++ documentation, see <a href="../c_lib/html/index.html">the C++ docs</a>.
+
+*/

@@ -11,14 +11,50 @@ import sys
 import copy
 from ctypes import *
 
-
+## Contains some basic info about a simulation domain.
+#
 class domain_data:
-    """! A struct containing info about the domain of the dump file"""
+    ## Constructor
+    #  
+    #  \param xlo        Lower bounds of the box
+    #  \param xhi        Upper bounds of the box
+    #  \param periodic   Int that contains the periodicity flags. Its value is
+    #                    0 + (x periodic?)*1 + (y periodic?)*2 + (z periodic?)*4
+    #  \param box_line   A string that describes the box in the LAMMPS format.
     def __init__(self,xlo,xhi,periodic,box_line):
-        self.xlo = xlo
-        self.xhi = xhi
-        self.periodic = periodic
-        self.box_line = box_line
+        self.xlo = xlo             ## Lower bounds of box
+        self.xhi = xhi             ## Upper bounds of box
+        self.periodic = periodic   ## Int that contains the periodicity flags
+        self.box_line = box_line   ## LAMMPS-style string describing the box
+
+    
+    def distance(self, xi, xj):
+        Lx = domain.xhi[0] - domain.xlo[0]
+        Ly = domain.xhi[1] - domain.xlo[1]
+        Lz = domain.xhi[2] - domain.xlo[2]
+    
+        if domain.periodic & 1:
+            if r[0] >  0.5*Lx:
+                r[0] -= Lx
+            elif r[0] <= -0.5*Lx:
+                r[0] += Lx
+    
+        if domain.periodic & 2:
+            if r[1] >  0.5*Ly:
+                r[1] -= Ly
+            elif r[1] <= -0.5*Ly:
+                r[1] += Ly
+    
+        if domain.periodic & 4:
+            if r[2] >  0.5*Lz:
+                r[2] -= Lz
+            elif r[2] <= -0.5*Lz:
+                r[2] += Lz
+                
+    dist = np.linalg.norm(r)
+    
+    return dist, r
+
 
 class block_meta:
     """! Contains the block "meta"-data, like number of atoms, domain, etc. """

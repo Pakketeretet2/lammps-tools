@@ -139,24 +139,52 @@ def get_theta( x, axis, normal ):
 #  \param method  Method used for neighbourising.
 #  \param neighs  Pre-calculated neighbour list. This saves computation time.
 #
+#  This function checks bond_data for bonds formed between pairs of types
+#  \p itype and \p jtype. It returns a list of bonds and their distance.
+# 
 def get_bond_stats( b, rc, itype = 0, jtype = 0, method = 0, neighs = None ):
     """ Calculates statistics on the bonding of atoms of type i and j. """
     if neighs is None:
         neighs = lammpstools.neighborize( b, rc, 3, method, itype, jtype )
 
-    im = lammpstools.make_id_map( b.ids )
-    print("t = ", b.meta.t)
+    im    = lammpstools.make_id_map( b.ids )
+    bonds = []
     for ni in neighs:
         idi = ni[0]
         idx = im[idi]
         if itype and (b.types[idx] != itype):
             continue
-        if len(ni) < 2:
-            continue
+
+        xi = b.x[idx]
+        for idj in ni[1:]:
+            jdx = im[idj]
+            xj = b.x[jdx]
+            rij = lammpstools.distance( b, xi, xj )
+
+            bonds.append( idi, idj, math.sqrt( np.dot(rij, rij) ) )
+    return bonds
         
-        print("    Neighs of ", ni[0], ", (type ", b.types[idi], " ):" ,end="")
-        
-        for i in range(1,len(ni)):
-            print(" ",ni[i],end="")
-        print("")
-        
+
+
+## Determines the number of topological defects for each particle and
+#  returns a dump_col containing them per particle in block.
+# 
+#  \param b    Block to determine the topological charges of
+#  \param n    Neighbor list corresponding to given block.
+#  \param nn0  The expected number of neighbours, i.e., particles with
+#              number of neighbours == nn0 will have charge 0.
+# 
+def topological_defects( b, n, nn0 = 6 ):
+    Qs = np.zeros(b.meta.N, dtype=int)
+    i = 0
+    Qtot = 0
+    for ni in n:
+        nns = len(ni) - 1
+        q   = nn0 - nns
+        Qs[i] = q
+        i += 1
+        Qtot += q
+    
+    dc = dump_col("q", Qs)
+
+    return dc, Qtot
