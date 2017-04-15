@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+#include <algorithm>
 #include <iosfwd>
 #include <vector>
 #include <list>

@@ -69,8 +69,6 @@ OBJ = $(SRC:%.$(EXT)=$(OBJ_DIR)$(S)%.o)
 OBJ_DIRS = $(dir $(OBJ))
 DEPS = $(OBJ:%.o=%.d)
 
-.PHONY: dirs all help clean print-flags
-
 OBJ_GUARD = $(OBJ_DIR)$(S).guard
 # For windows:
 #MAKE_DIR = $(if exist $(1),,mkdir $(1))

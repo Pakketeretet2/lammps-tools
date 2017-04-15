@@ -3,7 +3,6 @@
 
 #include "block_data.h"
 #include "dump_reader.h"
-#include "reader_core_binary.h"
 
 #include <string>
 #include <iosfwd>
@@ -28,7 +27,7 @@ public:
 	
 	dump_interpreter_gsd( const std::string &fname );
 	virtual ~dump_interpreter_gsd();
-	virtual int next_block( reader_core *r, block_data &b );
+	virtual int next_block( block_data &b );
 
 	int get_chunk_data( const std::string &name, void *dest );
 	

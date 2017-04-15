@@ -3,26 +3,45 @@
 
 #include "block_data.h"
 #include "dump_reader.h"
+#include "text_readers.h"
+
+struct block_meta
+{
+	py_int tstep;
+	py_int N;
+	std::string boxline;
+
+	py_float xlo[3], xhi[3];
+};
 
 class dump_interpreter_lammps : public dump_interpreter
 {
 public:
-	dump_interpreter_lammps() : id_idx(-1), type_idx(-1), x_idx(-1),
-	                            y_idx(-1), z_idx(-1), mol_idx(-1),
-	                            n_cols(0), atom_style( atom_styles::ATOMIC ),
-	                            scaled(0)
-	{}
-	virtual ~dump_interpreter_lammps(){}
-	virtual int next_block( reader_core *r, block_data &block );
-
-	virtual int next_block_meta( reader_core *r, block_data &block );
-	virtual int next_block_body( reader_core *r, block_data &block );
+	dump_interpreter_lammps( const std::string &dname, int file_type = 0 );
+	virtual ~dump_interpreter_lammps();
 	
+	virtual int next_block( block_data &block );
+
+	virtual int next_block_meta( block_data &block );
+	virtual int next_block_body( block_data &block );
+
+	virtual bool eof() const
+	{
+		if ( r ) return r->eof();
+		else     return false;
+	}
+	virtual bool good() const
+	{
+		if( r ) return r->good();
+		else    return false;
+	}
 	
 private:
 	enum { BIT_X = 1,
 	       BIT_Y = 2,
 	       BIT_Z = 3 };
+
+	text_reader *r;
 	
 	int id_idx;
 	int type_idx;
@@ -32,14 +51,15 @@ private:
 	int mol_idx;
 
 	int n_cols;
-	std::vector<std::string>          headers;
+	std::vector<std::string> headers;
 	
-	std::vector<int>                  other_cols;
-	std::vector<std::string>          other_col_headers;
+	std::vector<int>         other_cols;
+	std::vector<std::string> other_col_headers;
 
 	int atom_style;
-
 	int scaled;
+	std::string last_line;
+	block_meta last_meta;
 
 	void set_headers( const std::string &h_line );
 };

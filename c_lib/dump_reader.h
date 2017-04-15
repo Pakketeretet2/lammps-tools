@@ -10,69 +10,40 @@
 
 
 
-#include "util.h"
 #include "block_data.h"
+#include "dump_interpreter.h"
+#include "util.h"
+
 
 #include <iosfwd>
 
-class reader_core
-{
-public:
-	reader_core(){}
-	virtual ~reader_core(){}
-	
-	virtual bool getline( std::string &line );
-	virtual void rewind();
 
-	virtual void set_debug(bool){}
-	virtual operator bool()  const = 0;
-	virtual int peek() = 0;
-};
-
-
-class dump_interpreter
-{
-public:
-	dump_interpreter(){}
-	virtual ~dump_interpreter(){}
-
-	virtual int next_block( reader_core *r, block_data &block );
-	virtual int last_block( reader_core *r, block_data &block );
-
-	///< Calling next_block_meta only leaves the block in a half-
-	///< half-initialised state! You can read out the meta but not the rest.
-	virtual int next_block_meta( reader_core *r, block_data &block );
-	virtual int next_block_body( reader_core *r, block_data &block );
-	
-
-	struct block_meta {
-		py_int N, tstep;
-		py_float xlo[3], xhi[3];
-		std::string boxline;
-	};
-
-protected:
-	std::string last_line;
-	block_meta  last_meta;
-};
-
-
+/// A generic class for reading in dump files.
 class dump_reader
 {
 public:
+	/// Specifies various file formats
 	enum FILE_FORMATS {
 		PLAIN   = 0,
 		GZIP    = 1,
 		ISTREAM = 2,
 		BIN     = 3
 	};
-	
+
+	/// Specifies various dump formats
 	enum DUMP_FORMATS {
 		LAMMPS  = 0,
 		GSD     = 1,
-		DCD     = 2
+		NAMD    = 2
 	};
 
+	/**
+	   Pretty-prints given file format.
+
+	   \param   file_format The file format to pretty-print.
+
+	   \returns A pretty-printed string of the file format.
+	*/
 	static const char *fformat_to_str( int file_format )
 	{
 		switch( file_format ){
@@ -88,6 +59,14 @@ public:
 				return "BINARY";
 		}
 	}
+
+	/**
+	   Pretty-prints given dump format.
+
+	   \param   dump_format The file format to pretty-print.
+
+	   \returns A pretty-printed string of the dump format.
+	*/
 	static const char *dformat_to_str( int dformat )
 	{
 		switch( dformat ){
@@ -97,77 +76,118 @@ public:
 				return "LAMMPS";
 			case GSD:
 				return "GSD";
-			case DCD:
-				return "DCD";
+			case NAMD:
+				return "NAMD";
 		}
 	}
 
-	dump_reader( std::istream &stream, int dformat = LAMMPS );
-	dump_reader( const std::string &fname, int fformat = -1,
-	             int dformat = -1 );
+	
+	/// Construct dump reader from file.
+	dump_reader( const std::string &fname );
+	dump_reader( const std::string &fname, int dformat, int fformat );
+	
+	/// Cleanup:
+	virtual ~dump_reader();
+
+	/// Prepare dump interpreter:
+	void setup_interpreter( const std::string &fname );
 
 	/// Tries to read in the next block from file. If successful,
 	/// returns true and block_data contains the next block.
 	/// Else returns false and block is unchanged.
-	virtual bool next_block( block_data &block );
+	int next_block( block_data &block );
 
 	/// To return read the last block in the file. If successful,
 	/// returns true and block_data contains the next block.
 	/// Else returns false and block_data is unchanged.
-	virtual bool last_block( block_data &block );
-	
-	virtual ~dump_reader();
+        int last_block( block_data &block );
 
-	operator bool() const
-	{
-		return !at_eof;
-	}
+	/// Checks if the internal file is good or not.
+	bool eof()  const { return interp->eof(); }
+	bool good() const { return interp->good(); }
+	
 
 	/// Fast-forward a number of blocks.
-	bool skip_blocks( int Nblocks );
+        int skip_blocks( int Nblocks );
 
 	/// Fast-forward one block.
-	bool skip_block ( );
+	int skip_block();
 
+	/// Rewinds to the beginning.
+	void rewind();
+	
 	/// Returns the number of blocks in the file.
 	std::size_t block_count();
 
-	/// Rewinds the file to the beginning.
 	
 private:
+	int dump_format;  //!< Stores the dump format
+	int file_format;  //!< Stores the file format
 
-	bool at_eof;
-	int file_format;
-	int dump_format;
+	dump_interpreter *interp; //!< Points to an internal dump_interpreter
 
-	reader_core      *reader;
-	dump_interpreter *interp;
-
-	void guess_file_type( const std::string &fname );
-	void guess_dump_type( const std::string &fname );
-	void post_constructor( const std::string &fname );
-	
-	void setup_reader( std::istream &stream );
-	void setup_reader( const std::string &fname );
-
-	void setup_interpreter();
-	void setup_interpreter_gsd( const std::string &fname );
+	/// Guesses file type from name
+	void guess_file_type ( const std::string &fname );
+	/// Guesses dump type from name
+	void guess_dump_type ( const std::string &fname );	
 };
 
 
 
-// Use this to interface with the C++ dump reader.
+
 extern "C" {
 
+/// This struct is used for interfacing between Python and the C++ lib.
 struct dump_reader_handle {
+	dump_reader_handle() : reader(nullptr), last_block(nullptr){}
 	dump_reader *reader;
 	block_data  *last_block;
 };
-	
+
+/**
+   Constructs a dump_reader_handle and passes it back.
+
+   \param dname    The name of the dump file.
+   \param dformat  The dump format, should be one of the DUMP_FORMATS
+   \param fformat  The file format, should be one of the FILE_FORMATS
+   
+   Make sure the dump_reader_handle is freed using the matching
+   release_dump_reader_handle.
+*/
 dump_reader_handle *get_dump_reader_handle( const char *dname,
                                             py_int dformat, py_int fformat );
+
+/**
+   Releases a dump_reader_handle ensuring proper clean-up.
+
+   \param dh   The dump_reader_handle to free.
+*/
 void release_dump_reader_handle( dump_reader_handle *dh );
-bool dump_reader_next_block( dump_reader_handle *dh );
+
+/**
+   Makes the dump_reader_handle \p dh read in a new block and store
+   it in its matching \p last_block field.
+
+   \param dh  Ptr to the dump_reader_handle that is to read the file.
+   
+   \returns   An exist signal. 0 on success, negative on an unknown
+              failure, positive if the end of file was encountered.
+*/
+int  dump_reader_next_block( dump_reader_handle *dh );
+
+/**
+   Grabs the meta info from the \p last_block field of the dump_reader_handle 
+   and stores those in the passed fields.
+
+   \param dh          Ptr to the dump_reader_handle that is to read the file.
+   \param tstep       a
+   \param N           a
+   \param xlo         a
+   \param xhi         a
+   \param periodic    a
+   \param boxline     a
+   \param atom_style  a
+*/
 void dump_reader_get_block_meta( dump_reader_handle *dh,
                                  py_int *tstep, py_int *N,
                                  py_float *xlo, py_float *xhi,
@@ -177,8 +197,8 @@ void dump_reader_get_block_data( dump_reader_handle *dh,
                                  py_int N, py_float *x, py_int *ids,
                                  py_int *types, py_int *mol );
 
-bool dump_reader_fast_forward( dump_reader_handle *dh,
-                               py_int N_blocks );
+int dump_reader_fast_forward( dump_reader_handle *dh,
+                              py_int N_blocks );
 
 	
 

@@ -2,11 +2,32 @@
 
 #include "util.h"
 
-int dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block )
+dump_interpreter_lammps::dump_interpreter_lammps( const std::string &dname,
+                                                  int file_type )
+	: dump_interpreter(dname), r(nullptr), id_idx(-1), type_idx(-1),
+	  x_idx(-1), y_idx(-1), z_idx(-1), mol_idx(-1),
+	  n_cols(0), atom_style( atom_styles::ATOMIC ),
+	  scaled(0), last_line("")
+{
+	if( file_type == dump_reader::PLAIN ){
+		r = new text_reader_plain( dname );
+	}else{
+
+	}
+}
+
+dump_interpreter_lammps::~dump_interpreter_lammps()
+{
+	if( r ) delete r;
+}
+
+
+int dump_interpreter_lammps::next_block_meta( block_data &block )
 {
 	bool success = false;
 	std::string line;
-	
+
+	block_meta last_meta;
 	
 	while( r->getline( line ) ){
 		if( line == "ITEM: TIMESTEP" ){
@@ -59,7 +80,7 @@ int dump_interpreter_lammps::next_block_meta( reader_core *r, block_data &block 
 	return 0;
 }
 
-int dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block )
+int dump_interpreter_lammps::next_block_body( block_data &block )
 {
 	std::string line = last_line;
 	py_int N = last_meta.N;
@@ -94,7 +115,7 @@ int dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block 
 			block.other_cols[i].header = other_col_headers[i];
 			// std::cerr << "Resizing other cols to " << block.N << "\n";
 			block.other_cols[i].resize( block.N );
-			// std::cerr << block.other_cols[i].header << " was the header.\n";
+			// std::cerr << block.other_cols[i].header << " was the header->\n";
 		}
 		// std::cerr << "Grabbing " << block.N << " atoms.\n";
 		for( int i = 0; i < block.N; ++i ){
@@ -162,7 +183,7 @@ int dump_interpreter_lammps::next_block_body( reader_core *r, block_data &block 
 
 
 
-int dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
+int dump_interpreter_lammps::next_block( block_data &block )
 {
 	if( r->peek() == EOF ){
 		if( r ){
@@ -170,9 +191,9 @@ int dump_interpreter_lammps::next_block( reader_core *r, block_data &block )
 			return 1;
 		}
 	}
-	int status = next_block_meta( r, block );
+	int status = next_block_meta( block );
 	if( !status ){
-		return next_block_body( r, block );		
+		return next_block_body( block );		
 	}else{
 		std::cerr << "Failed to get meta!\n";
 		return -1;
@@ -252,8 +273,5 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 		//           << other_cols[i] << " )";
 	}
 	// std::cerr << "\n";
-
-
-
 }
 

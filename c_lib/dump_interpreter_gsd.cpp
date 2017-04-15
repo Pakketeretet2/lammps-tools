@@ -8,7 +8,8 @@
 
 
 dump_interpreter_gsd::dump_interpreter_gsd( const std::string &fname )
-	: status( 0 ), gh( nullptr ), current_frame( -1 )
+	: dump_interpreter( fname ), status( 0 ),
+	  gh( nullptr ), current_frame( -1 )
 {
 	MY_CERR << "Attempting to open gsd file " << fname << ".\n";
 	gh = new gsd_handle;
@@ -58,7 +59,7 @@ int dump_interpreter_gsd::get_chunk_data( const std::string &name, void *dest )
 }
 
 
-int dump_interpreter_gsd::next_block( reader_core *, block_data &b )
+int dump_interpreter_gsd::next_block( block_data &b )
 {
 	++current_frame;
 	const gsd_index_entry *entry;

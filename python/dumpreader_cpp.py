@@ -43,7 +43,7 @@ class dumpreader_cpp:
             fformat = -1
 
         self.handle = lammpstools.get_dump_reader_handle( fname.encode(),
-                                                          fformat, dformat )
+                                                          dformat, fformat )
             
         print("Opened dump reader handle @ ", hex(self.handle),
               file = sys.stderr)

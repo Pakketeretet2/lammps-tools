@@ -9,123 +9,28 @@
 
 #include <boost/iostreams/filter/gzip.hpp>
 
-#include "reader_core_plain.h"
-#include "reader_core_gzip.h"
-#include "reader_core_binary.h"
-
 #include "dump_interpreter_lammps.h"
 #include "dump_interpreter_dcd.h"
 #include "dump_interpreter_gsd.h"
 
 
-struct dummy_stream
+dump_reader::dump_reader( const std::string &fname )
 {
-	template <typename T>
-	dummy_stream &operator<<( const T &t )
-	{
-		return *this;
-	}
+	guess_dump_type( fname );
+	guess_file_type( fname );
 
-	void flush(){}
-};
-
-struct debug_stream
-{
-	debug_stream( std::ostream &out ) : o(out){}
-		
-	template <typename T>
-	debug_stream &operator<<( const T &t )
-	{
-		o << t;
-		o.flush();
-		return *this;
-	}
-
-	void flush()
-	{
-		o.flush();
-	}
-	
-	std::ostream &o;
-};
-
-
-
-bool reader_core::getline( std::string &line )
-{
-	std::cerr << "Do not use reader_core::getline. Use a derived class!\n";
-	std::terminate();
-	return false;
-}
-
-void reader_core::rewind()
-{
-	std::cerr << "Do not use reader_core::rewind. Use a derived class!\n";
-	std::terminate();
-}
-
-
-int dump_interpreter::next_block( reader_core *r, block_data &block )
-{
-	std::cerr << "Do not use dump_interpreter directly! "
-	          << "Use a derived class!\n";
-	std::terminate();
-	return false;
-}
-
-int dump_interpreter::next_block_meta( reader_core *r, block_data &block )
-{
-	std::cerr << "Do not use dump_interpreter directly! "
-	          << "Use a derived class!\n";
-	std::terminate();
-	return false;
-}
-
-int dump_interpreter::next_block_body( reader_core *r, block_data &block )
-{
-	std::cerr << "Do not use dump_interpreter directly! "
-	          << "Use a derived class!\n";
-	std::terminate();
-	return false;
-}
-
-
-int dump_interpreter::last_block( reader_core *r, block_data &block )
-{
-	block_data last_block;
-	int status = next_block( r, block );
-	if( !status ){
-		do{
-			last_block = block;
-		}while( next_block( r, block ) );
-		return 0;
-	}else{
-		return -1;
-	}
+	setup_interpreter( fname );
 }
 
 
 
-
-// ***************** DUMPREADER STUFF ********************
-dump_reader::dump_reader( std::istream &stream, int dformat ) :
-	dump_format( dformat ), at_eof(false)
-{
-	file_format = ISTREAM;
-	dump_format = dformat;
-	setup_interpreter();
-	setup_reader( stream );
-}
-
-
-
-dump_reader::dump_reader( const std::string &fname, int fformat, int dformat )
+dump_reader::dump_reader( const std::string &fname, int dformat, int fformat )
 	: dump_format( dformat ), file_format( fformat )
 {
 	if( dump_format < 0 ) guess_dump_type( fname );
 	if( file_format < 0 ) guess_file_type( fname );
 
-	post_constructor( fname );
+	setup_interpreter( fname );
 }
 
 void dump_reader::guess_file_type( const std::string &fname )
@@ -147,7 +52,7 @@ void dump_reader::guess_dump_type( const std::string &fname )
 	}else if( ends_with( fname, ".dump.gz" ) ){
 		dump_format = LAMMPS;
 	}else if( ends_with( fname, ".dcd" ) ){
-		dump_format = DCD;
+		dump_format = NAMD;
 		file_format = BIN;
 	}else{
 		std::cerr << "Extension of dump file " << fname
@@ -157,126 +62,63 @@ void dump_reader::guess_dump_type( const std::string &fname )
 	}
 }
 
-void dump_reader::post_constructor( const std::string &fname )
-{
-	if( dump_format != GSD ){
-		setup_interpreter();
-		setup_reader( fname );
-	}else if( dump_format == GSD ){
-		setup_interpreter_gsd( fname );
-		reader = nullptr; // gsd uses it's own reader.
-	}else{
-		std::cerr << "Dunno what to do with dump format "
-		          << dump_format << "!\n";
-		std::terminate();
-	}
-}
-
-
 
 
 dump_reader::~dump_reader()
 {
-	if( reader ) delete reader;
 	if( interp ) delete interp;
 }
 
-
-void dump_reader::setup_reader( std::istream &stream )
-{
-	reader = new reader_core_plain( stream );
-	if( !reader ){
-		std::cerr << "Failure setting up reader!\n";
-		std::terminate();
-	}
-}
-
-void dump_reader::setup_reader( const std::string &fname )
-{
-	std::cerr << "Setting up reader for format " << file_format << ".\n";
-	if( !file_exists( fname ) ){
-		std::cerr << "File " << fname << " doesn't exist!\n";
-		std::terminate();
-	}
-	
-	if( file_format == GZIP ){
-		reader = new reader_core_gzip( fname );
-	}else if( file_format == PLAIN ){
-		reader = new reader_core_plain( fname );
-	}else if( file_format == BIN ){
-		reader = new reader_core_bin( fname );
-	}else{
-		std::cerr << "File format for reader not recognized!\n";
-		std::terminate();
-	}
-
-	if( !reader || !(*reader) ){
-		std::cerr << "Failure setting up reader! Perhaps file doesn't exist?\n";
-		std::terminate();
-	}
-}
-
-void dump_reader::setup_interpreter()
+void dump_reader::setup_interpreter( const std::string &fname )
 {
 	if( dump_format == LAMMPS ){
-		interp = new dump_interpreter_lammps();
-	}else if( dump_format == DCD ){
-		std::cerr << "Creating dcd interpreter.\n";
-		interp = new dump_interpreter_dcd();
-	}else{
-		std::cerr << "Unrecognized dump format!\n";
-		std::terminate();
+		if( file_format == PLAIN ){
+			interp = new dump_interpreter_lammps( fname );
+		}else{
+			interp = new dump_interpreter_lammps( fname, 1 );
+		}
+	}else if( dump_format == GSD ){
+		
+	}else if( dump_format == NAMD ){
+		
 	}
 }
 
-void dump_reader::setup_interpreter_gsd( const std::string &fname )
+
+int dump_reader::next_block( block_data &block )
 {
-	interp = new dump_interpreter_gsd( fname );
+	return interp->next_block( block );
 }
 
-
-
-bool dump_reader::next_block( block_data &block )
+int dump_reader::last_block( block_data &block )
 {
-	return interp->next_block( reader, block );
-}
-
-bool dump_reader::last_block( block_data &block )
-{
-	int status = interp->next_block( reader, block );
-	if( status ) return false;
-	
+	int status = interp->next_block( block );
 	while( !status ){
-		status = interp->next_block( reader, block );
+		status = interp->next_block( block );
 	}
-	return true;
+	return status;
 }
 
 
 
-bool dump_reader::skip_blocks( int Nblocks )
+int dump_reader::skip_blocks( int Nblocks )
 {
 	int status = 0;
 	for( int i = 0; i < Nblocks; ++i ){
 		block_data b;
-		status = interp->next_block_meta( reader, b );
+		status = interp->next_block_meta( b );
 		if( status ){
-			return false;
-		}
-		// line is at "ITEM: TIMESTEP now. Skip b.N + 1 line."
-		std::string tmp;
-		for( int i = 0; i < b.N; ++i ){
-			reader->getline( tmp );
+			return status;
 		}
 	}
-	return ( status == 0 );
+	return status;
 }
 
 
-bool dump_reader::skip_block ( )
+int dump_reader::skip_block ( )
 {
 	block_data b;
-	return next_block( b ) == 0;
+	return next_block( b );
 }
 
 
@@ -284,11 +126,10 @@ bool dump_reader::skip_block ( )
 std::size_t dump_reader::block_count()
 {
 	std::size_t i = 0;
-	bool success = false;
 	while( true ){
 		block_data b;
-		success = next_block( b );
-		if( success ){
+	        int status = next_block( b );
+		if( !status ){
 			++i;
 		}else{
 			return i;
@@ -297,18 +138,17 @@ std::size_t dump_reader::block_count()
 }
 
 
+
+
 // **************** For interfacing with foreign languages *********************
 extern "C" {
-
-dump_reader_handle *get_dump_reader_handle( const char *dname,
-                                            py_int dformat, py_int fformat )
+	dump_reader_handle *get_dump_reader_handle( const char *dname,
+	                                            py_int dformat, py_int fformat )
 {
 	std::cerr << "dname = " << dname << "\n";
 	dump_reader_handle *dh = new dump_reader_handle;
-	dh->last_block = nullptr;
-	dh->reader     = nullptr;
-	std::string name( dname );
-	dh->reader = new dump_reader( name, fformat, dformat );
+        std::string name( dname );
+        dh->reader = new dump_reader( name, dformat, fformat );
 	dh->last_block = new block_data;
 	
 	return dh;
@@ -323,7 +163,7 @@ void release_dump_reader_handle( dump_reader_handle *dh )
 	}
 }
 
-bool dump_reader_next_block( dump_reader_handle *dh )
+int dump_reader_next_block( dump_reader_handle *dh )
 {
 	block_data block;
 	// std::cerr << "Calling next_block on dh @ " << dh << "\n";
@@ -331,19 +171,13 @@ bool dump_reader_next_block( dump_reader_handle *dh )
 	if( status ){
 		if( status > 0 ){
 			std::cerr << "Dump file at EOF.\n";
-			return false;
 		}else{
 			std::cerr << "Failed to get next block\n";
-			return false;
 		}
+		return status;
 	}
-	
-	// std::cerr << "Got next block of " << block.N
-	//           << " particles at time " << block.tstep << ".\n";
-	block_data *address = dh->last_block;
-	// std::cerr << "Got next block, it's @ " << address << "\n";
-	*address = block;
-	return true;
+        
+	return status;
 }
 
 void dump_reader_get_block_meta( dump_reader_handle *dh,
@@ -432,7 +266,7 @@ void dump_reader_get_block_data( dump_reader_handle *dh,
 
 }
 
-bool dump_reader_fast_forward( dump_reader_handle *dh,
+int dump_reader_fast_forward( dump_reader_handle *dh,
                                py_int N_blocks )
 {
 	return dh->reader->skip_blocks( N_blocks );

@@ -3,7 +3,7 @@
 
 #include "block_data.h"
 #include "dump_reader.h"
-#include "reader_core_binary.h"
+
 
 class dump_interpreter_dcd : public dump_interpreter
 {
@@ -13,12 +13,12 @@ public:
 	static constexpr double TIMEFACTOR   = 48.88821;
 	
 
-	dump_interpreter_dcd() : namd_units(true)
+	dump_interpreter_dcd( std::string &dname )
+		: dump_interpreter(dname), namd_units(true)
 	{}
 	virtual ~dump_interpreter_dcd(){}
 
-	
-	virtual int next_block( reader_core *r, block_data &block );
+	virtual int next_block( block_data &block );
 	
         
 	

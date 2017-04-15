@@ -1,5 +1,4 @@
-
-
+.PHONY: dirs all help clean print-flags install uninstall cppcheck
 
 all : dirs $(EXE)
 
@@ -17,7 +16,7 @@ help :
 
 
 $(EXE) : $(OBJ)
-	$(LINK) $(OBJ) -o $@
+	$(LINK) -o $@ $(OBJ) -Wl,-z,defs
 
 $(OBJ_DIR)$(S)%.o : %.$(EXT)
 	$(call MAKE_DIR,$(dir $@))
@@ -36,6 +35,13 @@ install: $(EXE)
 
 uninstall:
 	rm -rf $(LIB_DIR)/$(subst ../,,$(EXE))
+
+check-syntax: cppcheck
+	g++ -o nul -S ${SRC} $(CFLAGS)
+
+cppcheck:
+	cppcheck --enable=all --quiet --template={file}:{line}:{severity}:{message} ${SRC}
+
 
 print-flags:
 	@echo "Compilation flags: $(COMP)"
