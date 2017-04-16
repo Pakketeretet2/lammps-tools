@@ -15,6 +15,7 @@
 
 
 dump_reader::dump_reader( const std::string &fname )
+	: dump_format(-1), file_format(-1), interp(nullptr)
 {
 	guess_dump_type( fname );
 	guess_file_type( fname );
@@ -25,7 +26,7 @@ dump_reader::dump_reader( const std::string &fname )
 
 
 dump_reader::dump_reader( const std::string &fname, int dformat, int fformat )
-	: dump_format( dformat ), file_format( fformat )
+	: dump_format( dformat ), file_format( fformat ), interp(nullptr)
 {
 	if( dump_format < 0 ) guess_dump_type( fname );
 	if( file_format < 0 ) guess_file_type( fname );
@@ -78,7 +79,7 @@ void dump_reader::setup_interpreter( const std::string &fname )
 			interp = new dump_interpreter_lammps( fname, 1 );
 		}
 	}else if( dump_format == GSD ){
-		
+		interp = new dump_interpreter_gsd( fname );
 	}else if( dump_format == NAMD ){
 		
 	}
@@ -105,9 +106,8 @@ int dump_reader::skip_blocks( int Nblocks )
 {
 	int status = 0;
 	for( int i = 0; i < Nblocks; ++i ){
-		block_data b;
-		status = interp->next_block_meta( b );
-		if( status ){
+		status = skip_block();
+		if( !status ){
 			return status;
 		}
 	}
@@ -117,8 +117,7 @@ int dump_reader::skip_blocks( int Nblocks )
 
 int dump_reader::skip_block ( )
 {
-	block_data b;
-	return next_block( b );
+	return interp->skip_block();
 }
 
 
@@ -165,8 +164,8 @@ void release_dump_reader_handle( dump_reader_handle *dh )
 
 int dump_reader_next_block( dump_reader_handle *dh )
 {
-	block_data block;
 	// std::cerr << "Calling next_block on dh @ " << dh << "\n";
+	block_data &block = *dh->last_block;
 	int status = dh->reader->next_block( block );
 	if( status ){
 		if( status > 0 ){

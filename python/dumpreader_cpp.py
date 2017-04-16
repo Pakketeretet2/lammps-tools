@@ -79,6 +79,7 @@ class dumpreader_cpp:
     def getblock(self):
         ## Returns a block_data containing the info of the next block,
         ## or None if the next block could somehow not be read.
+        print("Gonna grab new block now...", file=sys.stderr)
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
         domain = domain_data( np.array( [0, 0, 0] ), np.array( [0, 0, 0] ),
                               0, "ITEM: BOX BOUNDS pp pp pp" )
@@ -94,11 +95,12 @@ class dumpreader_cpp:
         # Should fit "ITEM: BOX BOUNDS pp pp pp\0"
         box_line_buff = ctypes.create_string_buffer(26)
 
-        if not lammpstools.dump_reader_next_block( self.handle ):
+        if lammpstools.dump_reader_next_block( self.handle ):
             # print("An error happened reading the next block!",file=sys.stderr)
             self.at_eof = True
             return None
-
+        else:
+            print("Read in a block. Grabbing its info now.", file=sys.stderr)
 
         lammpstools.dump_reader_get_block_meta( self.handle, byref(tstep), byref(N),
                                                 ctypes.c_void_p(xlo.ctypes.data),
@@ -106,8 +108,8 @@ class dumpreader_cpp:
                                                 byref(periodic),
                                                 box_line_buff,
                                                 byref(atom_style) )
-        box_line = str( box_line_buff, 'ascii' )
         
+        box_line = str( box_line_buff, 'ascii' )
         x     = np.empty( [N.value, 3], dtype = float )
         ids   = np.empty( N.value, dtype = int )
         types = np.empty( N.value, dtype = int )
@@ -133,7 +135,7 @@ class dumpreader_cpp:
         meta = block_meta( tstep.value, N.value, dom )
         meta.atom_style = atom_style_named
         b = block_data( meta, ids, types, x, mol )
-        
+        print("Returning block now...", file=sys.stderr)
         return b
 
     

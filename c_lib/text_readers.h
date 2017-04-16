@@ -4,6 +4,11 @@
 #include <iosfwd>
 #include <string>
 
+#ifdef HAVE_BOOST_GZIP
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#endif
+
 /** 
     A general interface to read in text files.
 */
@@ -36,5 +41,30 @@ public:
 private:
 	std::ifstream *in;
 };
+
+
+/** 
+    Reads in gzipped text files:
+*/
+class text_reader_gzip : public text_reader
+{
+public:
+	text_reader_gzip( const std::string &fname );
+	virtual ~text_reader_gzip();
+
+	virtual bool getline( std::string &line );
+	virtual int peek();
+
+	virtual bool eof()  const;
+	virtual bool good() const;
+
+private:
+	std::ifstream *in_file;
+#ifdef HAVE_BOOST_GZIP
+	boost::iostreams::filtering_istream in;
+#endif // HAVE_BOOST_GZIP
+};
+
+
 
 #endif // TEXT_READERS_H

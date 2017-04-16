@@ -9,7 +9,7 @@
 
 dump_interpreter_gsd::dump_interpreter_gsd( const std::string &fname )
 	: dump_interpreter( fname ), status( 0 ),
-	  gh( nullptr ), current_frame( -1 )
+	  gh( nullptr ), current_frame( -1 ), eof_( true ), good_( false )
 {
 	MY_CERR << "Attempting to open gsd file " << fname << ".\n";
 	gh = new gsd_handle;
@@ -18,6 +18,9 @@ dump_interpreter_gsd::dump_interpreter_gsd( const std::string &fname )
 	if( status ){
 		MY_CERR << "Error occured opening file!\n";
 		std::terminate();
+	}else{
+		good_ = true;
+		eof_ = false;
 	}
 
 	/*
@@ -73,13 +76,22 @@ int dump_interpreter_gsd::next_block( block_data &b )
 
 	bool default_type = false;
 	
-	status = get_chunk_data( "configuration/step", &tstep );
-	status = get_chunk_data( "configuration/dimensions", &dims );
-	status = get_chunk_data( "configuration/box", box );
-	status = get_chunk_data( "particles/N", &N );
-
-	if( status ){
-		MY_CERR << "An error occured!\n";
+	if( get_chunk_data( "configuration/step", &tstep ) ) {
+		// Assume EOF, because this would be first block
+		eof_ = true;
+		return 0;
+	}
+	if ( get_chunk_data( "configuration/dimensions", &dims ) ) {
+		// This is not good.
+		good_ = false;
+		return -1;
+	}
+	if( get_chunk_data( "configuration/box", box ) ){
+		good_ = false;
+		return -1;
+	}
+	if( get_chunk_data( "particles/N", &N ) ){
+		good_ = false;
 		return -1;
 	}
 
@@ -98,9 +110,14 @@ int dump_interpreter_gsd::next_block( block_data &b )
 	
 
 	status = get_chunk_data( "particles/position", x );
+	if( status == 1 ){
+		// This means types was not in the file. Probably because
+		// everything is the default 1.
+		std::cerr << "Didn't find particles/position!\n";
+		return -2;
+	}
+	
 	status = get_chunk_data( "particles/typeid",  type_ids );
-	
-	
 	if( status == 1 ){
 		// This means types was not in the file. Probably because
 		// everything is the default 1.

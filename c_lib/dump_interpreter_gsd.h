@@ -30,12 +30,17 @@ public:
 	virtual int next_block( block_data &b );
 
 	int get_chunk_data( const std::string &name, void *dest );
+
+	virtual bool eof()  const { return eof_; }
+	virtual bool good() const { return good_; }
 	
 private:
 	int status;
 	gsd_handle *gh;
 
 	uint64_t current_frame;
+
+	bool eof_, good_;
 };
 
 

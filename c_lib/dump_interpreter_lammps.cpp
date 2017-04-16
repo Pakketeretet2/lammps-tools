@@ -2,6 +2,15 @@
 
 #include "util.h"
 
+
+#ifdef VERBOSE_LIB
+#define MY_CERR std::cerr << __FILE__ << "(" << __LINE__ << "): "
+#else
+static std::ofstream gobble("/dev/null");
+#define MY_CERR gobble
+#endif
+
+
 dump_interpreter_lammps::dump_interpreter_lammps( const std::string &dname,
                                                   int file_type )
 	: dump_interpreter(dname), r(nullptr), id_idx(-1), type_idx(-1),
@@ -12,7 +21,12 @@ dump_interpreter_lammps::dump_interpreter_lammps( const std::string &dname,
 	if( file_type == dump_reader::PLAIN ){
 		r = new text_reader_plain( dname );
 	}else{
-
+		r = new text_reader_gzip( dname );
+	}
+	if( !r ){
+		std::cerr << "Failed to set up text reader for file " << dname
+		          << ", file format " << file_type << "!\n";
+		std::terminate();
 	}
 }
 
@@ -24,18 +38,17 @@ dump_interpreter_lammps::~dump_interpreter_lammps()
 
 int dump_interpreter_lammps::next_block_meta( block_data &block )
 {
-	bool success = false;
 	std::string line;
 
-	block_meta last_meta;
-	
 	while( r->getline( line ) ){
+		MY_CERR << "Line is \"" << line << "\".\n";
 		if( line == "ITEM: TIMESTEP" ){
 			r->getline( line );
 			last_meta.tstep = std::stoul( line );
 		}else if( line == "ITEM: NUMBER OF ATOMS" ){
 			r->getline( line );
 			last_meta.N = std::stoul( line );
+			MY_CERR << "N = " << last_meta.N << "\n";
 		}else if( starts_with( line, "ITEM: BOX BOUNDS " ) ){
 			last_meta.boxline = line.substr( 17 );
 			r->getline( line );
@@ -54,38 +67,34 @@ int dump_interpreter_lammps::next_block_meta( block_data &block )
 		}else if( starts_with( line, "ITEM: ATOMS " ) ){
 			// Stop there.
 			last_line = line;
-			success = true;
-			break;
+			return 0;
 		}else{
 			std::cerr << "Encountered line '" << line
 			          << "' and have no clue what to do!\n";
 			return -1;
 		}
 	}
-
-	if( success ){
-		block.boxline = last_meta.boxline;
-		block.tstep   = last_meta.tstep;
-		
-		block.xlo[0] = last_meta.xlo[0];
-		block.xlo[1] = last_meta.xlo[1];
-		block.xlo[2] = last_meta.xlo[2];
-		
-		block.xhi[0] = last_meta.xhi[0];
-		block.xhi[1] = last_meta.xhi[1];
-		block.xhi[2] = last_meta.xhi[2];
-		block.N      = last_meta.N;
-		
-	}
-	return 0;
+	return -1;
 }
 
 int dump_interpreter_lammps::next_block_body( block_data &block )
 {
 	std::string line = last_line;
-	py_int N = last_meta.N;
-	// block_data b(N);
-	block.resize( N );
+
+	block.atom_style = atom_style;
+	block.boxline    = last_meta.boxline;
+	block.tstep      = last_meta.tstep;
+	
+	block.xlo[0] = last_meta.xlo[0];
+	block.xlo[1] = last_meta.xlo[1];
+	block.xlo[2] = last_meta.xlo[2];
+		
+	block.xhi[0] = last_meta.xhi[0];
+	block.xhi[1] = last_meta.xhi[1];
+	block.xhi[2] = last_meta.xhi[2];
+	block.N      = last_meta.N;
+	
+	block.resize( block.N );	
 	
 	if( starts_with( line, "ITEM: ATOMS " ) ){
 		// Figure out which column maps which.
@@ -93,18 +102,6 @@ int dump_interpreter_lammps::next_block_body( block_data &block )
 		if( headers.empty() ){
 			set_headers( line.substr( 12 ) );
 		}
-
-		block.atom_style = atom_style;
-		block.boxline = last_meta.boxline;
-		block.tstep = last_meta.tstep;
-		
-		block.xlo[0] = last_meta.xlo[0];
-		block.xlo[1] = last_meta.xlo[1];
-		block.xlo[2] = last_meta.xlo[2];
-		
-		block.xhi[0] = last_meta.xhi[0];
-		block.xhi[1] = last_meta.xhi[1];
-		block.xhi[2] = last_meta.xhi[2];
 		
 		double Lx = block.xhi[0] - block.xlo[0];
 		double Ly = block.xhi[1] - block.xlo[1];
@@ -193,6 +190,7 @@ int dump_interpreter_lammps::next_block( block_data &block )
 	}
 	int status = next_block_meta( block );
 	if( !status ){
+		MY_CERR << "Reading in block of size " << last_meta.N << "\n";
 		return next_block_body( block );		
 	}else{
 		std::cerr << "Failed to get meta!\n";

@@ -22,6 +22,12 @@ public:
 	virtual int next_block_meta( block_data &block );
 	virtual int next_block_body( block_data &block );
 
+	virtual int skip_block()
+	{
+		block_data b;
+		return next_block(b);
+	}
+
 	virtual bool eof()  const = 0;
 	virtual bool good() const = 0;
 	
