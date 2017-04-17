@@ -34,5 +34,6 @@ from typecasts import void_ptr
 #import bond_analysis
 #import potentials
 #import makepairtable
+import bond_analysis
 import block_data
 import lammpstools

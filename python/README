@@ -1,14 +1,16 @@
-This is a set of python utilities for analysis/postprocessing of lammps data.
-The utilities make use of a C/C++ library for some of the heavy lifting, so
-that they are not too slow.
+This dir contains a python module containing utilities for analysis and/or
+postprocessing of simulation data. The utilities make use of a C/C++ library
+for some of the heavy lifting, so that they are not too slow.
 
 Requirements:
-Python 2 (I've only used 2.7, so that one works)
+Python 3 (2 is no longer supported.)
 numpy
 scipy
 ctypes
 a C/C++ compiler (clang and gcc work)
 
 License stuff:
-Since LAMMPS is GPLv2, it makes most sense to "release" this software under
-that license as well, even though it is only for internal use at the moment.
+This package is released under the Unlicense, except for the gsd component
+which is under a 2-clause BSD-style license. See ../c_lib/gsd/LICENSE for
+more info.
+
