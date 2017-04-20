@@ -266,8 +266,6 @@ void read_block_lammps_data_body( std::istream &in, std::string &line,
 			}
 			ss >> b.types[i];
 			ss >> b.x[i][0] >> b.x[i][1] >> b.x[i][2];
-			std::cerr << "x[i] = " << b.x[i][0] << " " << b.x[i][1]
-			          << " " << b.x[i][2] << "\n";
 			if( !warned_image_flags && (n_entries == n_expect+3) ){
 				std::cerr << "WARNING: Ignoring image flags.\n";
 				warned_image_flags = true;
@@ -287,7 +285,6 @@ void read_block_lammps_data_body( std::istream &in, std::string &line,
 		
 		for( py_int i = 0; i < b.N; ++i ){
 			std::getline( in, line );
-			std::cerr << "line: " << line << "\n";
 			words = split(line);
 			int n_entries = words.size();
 			if( n_entries != n_expect ){
@@ -328,7 +325,6 @@ void read_block_lammps_data_body( std::istream &in, std::string &line,
 
 	while( std::getline(in,line) ){
 		if( !line.empty() ){
-			std::cerr << "Got line " << line << " before recursion.\n";
 			read_block_lammps_data_body( in, line, b );
 		}
 	}
@@ -370,7 +366,6 @@ block_data read_block_lammps_data( const std::string &fname )
 			b.top.N_angles = N_angles;
 			
 			b.init_topology();
-			std::cerr << "Hit " << words[0] << ", gonna read body.\n";
 			
 			read_block_lammps_data_body( in, line, b );
 			break;
