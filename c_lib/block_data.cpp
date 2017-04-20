@@ -207,50 +207,6 @@ void block_data_from_foreign( const void *x, py_int N, const py_int *ids,
 	b.boxline = box_line;
 }
 
-/*
-void copy( block_data &b, const block_data &source )
-{
-	b.resize( source.N );
-	
-	b.xlo[0] = source.xlo[0];
-	b.xlo[1] = source.xlo[1];
-	b.xlo[2] = source.xlo[2];
-	
-	b.xhi[0] = source.xhi[0];
-	b.xhi[1] = source.xhi[1];
-	b.xhi[2] = source.xhi[2];
-	
-	b.tstep = source.tstep;
-	b.atom_style = source.atom_style;
-	b.boxline = source.boxline;
-	b.periodic = source.periodic;
-
-	
-	b.other_cols.resize( source.other_cols.size() );
-	for( int i = 0; i < b.other_cols.size(); ++i ){
-		b.other_cols[i].data.resize( source.N );
-		b.other_cols[i].header = source.other_cols[i].header;
-	}
-	
-	for( int i = 0; i < source.N; ++i ){
-		b.x[i][0]  = source.x[i][0];
-		b.x[i][1]  = source.x[i][1];
-		b.x[i][2]  = source.x[i][2];
-
-		b.ids[i]   = source.ids[i];
-		b.types[i] = source.types[i];
-
-		if( b.atom_style == atom_styles::MOLECULAR ){
-			b.mol[i] = source.mol[i];
-		}
-
-		for( std::size_t j = 0; j < source.other_cols.size(); ++j ){
-			b.other_cols[j].data[i] = source.other_cols[j].data[i];
-		}
-	}	
-}
-*/
-
 extern "C" {
 
 block_data *new_block_data()

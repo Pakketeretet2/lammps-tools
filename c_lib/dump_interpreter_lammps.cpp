@@ -50,7 +50,7 @@ int dump_interpreter_lammps::next_block_meta( block_data &block )
 			last_meta.N = std::stoul( line );
 			MY_CERR << "N = " << last_meta.N << "\n";
 		}else if( starts_with( line, "ITEM: BOX BOUNDS " ) ){
-			last_meta.boxline = line.substr( 17 );
+			last_meta.boxline = line;
 			r->getline( line );
 			std::stringstream dims( line );
 			dims >> last_meta.xlo[0] >> last_meta.xhi[0];

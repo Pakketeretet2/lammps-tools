@@ -9,9 +9,8 @@ import gzip
 import os
 import sys
 import copy
-
-from dumpreader_cpp import *
-from block_data import *
+from lammpstools.block_data import *
+from lammpstools.dumpreader_cpp import *
 
 
 

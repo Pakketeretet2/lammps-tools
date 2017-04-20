@@ -150,7 +150,11 @@ void neighborize_impl( const arr3f &x, py_int N, const arr1i &ids,
 
 
 
-
+/**
+   Builds a distance-based neighbour list for atom positions in x. The neigh
+   list it returns contains the atoms per index, not per id. This should be
+   converted later.
+*/
 void neighborize_dist_nsq_impl( const arr3f &x, py_int N, const arr1i &ids,
                                 const arr1i &types, py_float rc, py_int periodic,
                                 const py_float *xlo, const py_float *xhi, py_int dims,
@@ -178,24 +182,20 @@ void neighborize_dist_nsq_impl( const arr3f &x, py_int N, const arr1i &ids,
 			if( dims != 2 ) r2 += r[2]*r[2];
 
 			if( r2 > rc2 ) continue;
-			/*
-			my_out << "Distance between " << i << " and " << j
-			<< ", (" << x[ii][0] << ", "
-			<< x[ii][1] << ", " << x[ii][2] << ") and ("
-			<< x[jj][0] << ", " << x[jj][1] << ", "
-			<< x[jj][2] << ") = " << sqrt(r2)
-			<< ", so adding...\n";
-			*/
-			if( itype != 0 && types[ii] != itype ){
-				continue;
-			}
-			if( jtype != 0 && types[jj] != jtype ){
-				continue;
-			}
 
-			/* Add both to list. */
-			neighs[ii].push_back(jj);
-			neighs[jj].push_back(ii);
+			bool ok = false;
+			bool is_itype_in = (types[ii] == itype ||
+			                    types[jj] == itype ||
+			                    itype == 0);
+			bool is_jtype_in = (types[ii] == jtype ||
+			                    types[jj] == jtype ||
+			                    jtype == 0);
+			ok = (is_itype_in && is_jtype_in);
+			if( ok ){
+				/* Add both to list. */
+				neighs[ii].push_back(jj);
+				neighs[jj].push_back(ii);
+			}
 		}
 	}
 }
@@ -267,14 +267,18 @@ void add_neighs_from_bin( py_int i, const arr3f &x, double rc, const arr1i &ids,
 				r2 += r[2]*r[2];
 			}
 
-			if( itype != 0 && types[i] != itype ){
-				continue;
-			}
-			if( jtype != 0 && types[j] != jtype ){
-				continue;
-			}
+			if( r2 > rc2 ) continue;
 			
-			if( r2 < rc2 ){
+			bool ok = false;
+			bool is_itype_in = (types[i] == itype ||
+			                    types[j] == itype ||
+			                    itype == 0);
+			bool is_jtype_in = (types[i] == jtype ||
+			                    types[j] == jtype ||
+			                    jtype == 0);
+			ok = (is_itype_in && is_jtype_in);
+			
+			if( ok ){
 				neighs[i].push_back(j);
 			}
 		}
@@ -417,6 +421,10 @@ void test_bin_shifting()
 
 
 
+/**
+   Builds a distance-based neighbour list for atom positions in x. 
+   Uses a binning algorithm instead of a stupid n^2 algorithm.
+*/
 void neighborize_dist_bin_impl( const arr3f &x, py_int N, const arr1i &ids,
                                 const arr1i &types, py_float rc, py_int periodic,
                                 const py_float *xlo, const py_float *xhi, py_int dims,

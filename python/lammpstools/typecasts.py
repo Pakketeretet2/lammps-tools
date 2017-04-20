@@ -7,7 +7,6 @@ The interface is based on ctypes.
 
 """
 
-
 import ctypes
 import numpy as np
 

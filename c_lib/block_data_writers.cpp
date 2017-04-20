@@ -55,6 +55,49 @@ void write_block_lammps_dump( const block_data &b, std::ostream &o )
 	}
 }
 
+
+void write_block_lammps_data( const block_data &b, const std::string &fname )
+{
+	std::ofstream o(fname);
+	write_block_lammps_data( b, o );
+		
+}
+
+void write_block_lammps_data( const block_data &b, std::ostream &o )
+{
+	o << "LAMMPS data file via lammps-tools\n\n";
+	o << b.N << " atoms\n";
+	py_int n_types = *(std::max_element( b.types, b.types + b.N ));
+	o << n_types << " atom types\n\n";
+	const char *words[3][2] = { { "xlo", "xhi"}, {"ylo", "yhi"}, {"zlo", "zhi"} };
+	for( int dim = 0; dim < 3; ++dim ){
+		o << b.xlo[dim] << " " << b.xhi[dim]
+		  << " " << words[dim][0] << " " << words[dim][1] << "\n";
+	}
+	o << "\n";
+	
+	std::string atom_style = "atomic";
+	if( b.atom_style == MOLECULAR )  atom_style = "molecular";
+
+	o << "Atoms # " << atom_style << "\n\n";
+	for( py_int i = 0; i < b.N; ++i ){
+		o << b.ids[i];
+		if( b.atom_style == MOLECULAR ){
+			o << " " << b.mol[i];
+		}
+		o << " " << b.x[i][0] << " " << b.x[i][1] << " "
+		  << b.x[i][2];
+
+		// If you ever support image flags or something, add here.
+		
+		
+		o << "\n";
+	}
+}
+
+
+
+
 void write_block_hoomd_gsd( const block_data &b, const std::string &fname )
 {
 	gsd_handle gh;
@@ -189,7 +232,7 @@ void write_block_to_file( const block_data *bh, const char *fname,
 	std::cerr << "File format is " << file_format << " and Data format is "
 	          << data_format << ".\n";
 
-	if( data_format == "LAMMPS" ){
+	if( data_format == "LAMMPS" || data_format == "LAMMPS_DUMP" ){
 		if( file_format == "GZIP" ){
 			std::cerr << "GZIP not supported for LAMMPS yet!\n";
 		}else if( file_format == "BIN" ){
@@ -197,7 +240,14 @@ void write_block_to_file( const block_data *bh, const char *fname,
 		}else{
 			write_block_lammps_dump( *bh, fname );
 		}
-		
+	}else if( data_format == "LAMMPS_DATA" ){
+		if( file_format == "GZIP" ){
+			std::cerr << "GZIP not supported for LAMMPS yet!\n";
+		}else if( file_format == "BIN" ){
+			std::cerr << "BIN not supported for LAMMPS yet!\n";
+		}else{
+			write_block_lammps_data( *bh, fname );
+		}		
 	}else if( data_format == "HOOMD" ){
 		if( file_format == "GZIP" || file_format == "PLAIN" ){
 			std::cerr << file_format

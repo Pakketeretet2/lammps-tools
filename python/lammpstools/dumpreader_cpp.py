@@ -1,4 +1,5 @@
-"""! @package dumpreader_cpp
+"""! \package lammpstools
+\file dumpreader_cpp.py
 This package contains functions for extracting dump files by delegating
 it to the C++ lib. This leads to better performance and the code is cleaner. XD
 
@@ -13,7 +14,9 @@ import copy
 
 from ctypes import *
 import ctypes
-from block_data import *
+
+from lammpstools.block_data import *
+
 
 
 class dumpreader_cpp:
@@ -79,7 +82,7 @@ class dumpreader_cpp:
     def getblock(self):
         ## Returns a block_data containing the info of the next block,
         ## or None if the next block could somehow not be read.
-        print("Gonna grab new block now...", file=sys.stderr)
+        # print("Gonna grab new block now...", file=sys.stderr)
         lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
         domain = domain_data( np.array( [0, 0, 0] ), np.array( [0, 0, 0] ),
                               0, "ITEM: BOX BOUNDS pp pp pp" )
@@ -99,8 +102,6 @@ class dumpreader_cpp:
             # print("An error happened reading the next block!",file=sys.stderr)
             self.at_eof = True
             return None
-        else:
-            print("Read in a block. Grabbing its info now.", file=sys.stderr)
 
         lammpstools.dump_reader_get_block_meta( self.handle, byref(tstep), byref(N),
                                                 ctypes.c_void_p(xlo.ctypes.data),
@@ -110,6 +111,7 @@ class dumpreader_cpp:
                                                 byref(atom_style) )
         
         box_line = str( box_line_buff, 'ascii' )
+        print("box_line is \"", box_line, "\".", file=sys.stderr)
         x     = np.empty( [N.value, 3], dtype = float )
         ids   = np.empty( N.value, dtype = int )
         types = np.empty( N.value, dtype = int )
@@ -134,8 +136,8 @@ class dumpreader_cpp:
         dom  = domain_data( xlo, xhi, periodic.value, box_line )
         meta = block_meta( tstep.value, N.value, dom )
         meta.atom_style = atom_style_named
+
         b = block_data( meta, ids, types, x, mol )
-        print("Returning block now...", file=sys.stderr)
         return b
 
     

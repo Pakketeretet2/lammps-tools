@@ -1,4 +1,5 @@
 """!
+\file compute_com.py
 This module contains some functions to calculate the centre of mass
 
 \ingroup lammpstools

@@ -7,20 +7,40 @@
 #include "gsd/gsd.h"
 
 /**
-   Writes block data in LAMMPS format to output stream.
+   Writes block data in LAMMPS dump format to output stream.
    
    @param b The block_data to write.
    @param o The output stream to write \p b to.
 */
 void write_block_lammps_dump( const block_data &b, std::ostream &o );
 
+
 /**
-   Writes block data in LAMMPS format to output stream.
+   Writes block data in LAMMPS dump format to file
    
    @param b     The block_data to write.
    @param fname The file name to write to.
 */
 void write_block_lammps_dump( const block_data &b, const std::string &fname );
+
+
+/**
+   Writes block data in LAMMPS data format to output stream.
+   
+   @param b     The block_data to write.
+   @param fname The file name to write to.
+*/
+void write_block_lammps_data( const block_data &b, const std::string &fname );
+
+
+/**
+   Writes block data in LAMMPS data format to output stream.
+   
+   @param b   The block_data to write.
+   @param o   The stream to write to.
+*/
+void write_block_lammps_data( const block_data &b, std::ostream &o );
+
 
 /**
    Writes block data in HOOMD schema to file named fname.
@@ -29,6 +49,7 @@ void write_block_lammps_dump( const block_data &b, const std::string &fname );
    @param fname The name of the GSD file to write \p b to.
 */
 void write_block_hoomd_gsd( const block_data &b, const std::string &fname );
+
 
 /**
    Writes block data in HOOMD schema to given gsd file.

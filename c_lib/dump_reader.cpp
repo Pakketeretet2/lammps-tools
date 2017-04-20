@@ -211,8 +211,8 @@ void dump_reader_get_block_meta( dump_reader_handle *dh,
 		for( int i = 0; i < lb->boxline.size(); ++i ){
 			boxline[i] = static_cast<char>( lb->boxline[i] );
 		}
+		boxline[lb->boxline.size()] = '\0';
 		
-		// boxline[lb->boxline.size()] = '\0';
 		// std::cerr << "Internal boxline is ";
 		for( int i = 0; i < lb->boxline.size(); ++i ){
 			// std::cerr << lb->boxline[i];

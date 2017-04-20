@@ -1,8 +1,8 @@
-"""! 
+"""!
+\file bond_analysis.py
 Contains some tools for bond analysis
 
 \ingroup lammpstools
-
 """
 
 
@@ -11,6 +11,9 @@ import scipy
 import sys, os
 import lammpstools
 import math
+
+from lammpstools import neighborize
+from lammpstools import util
 
 ## Computes the \p psi_n order parameter for each atom, and the average.
 #
@@ -37,9 +40,9 @@ def compute_psi_n( b, axis, order, normal, rc,
                    neighs = None, quiet = True ):
     """ Calculates the \Psi_n order parameter. """
     if neighs is None:
-        neighs = lammpstools.neighborize( b, rc, dims, method, itype, jtype )
+        neighs = neighborize.neighborize( b, rc, dims, method, itype, jtype )
 
-    im = lammpstools.make_id_map(b.ids)
+    im = util.make_id_map(b.ids)
 
     # Normalise axis:
     axlen = math.sqrt( np.dot(axis, axis) )
@@ -142,26 +145,29 @@ def get_theta( x, axis, normal ):
 #  This function checks bond_data for bonds formed between pairs of types
 #  \p itype and \p jtype. It returns a list of bonds and their distance.
 # 
-def get_bond_stats( b, rc, itype = 0, jtype = 0, method = 0, neighs = None ):
+def get_bond_stats( b, rc, itype = 0, jtype = 0, method = 0, neighs = None,
+                    same_mol = False, dims = 3 ):
     """ Calculates statistics on the bonding of atoms of type i and j. """
     if neighs is None:
-        neighs = lammpstools.neighborize( b, rc, 3, method, itype, jtype )
+        neighs = neighborize.neighborize( b, rc, dims, method, itype, jtype )
 
-    im    = lammpstools.make_id_map( b.ids )
+    im    = util.make_id_map( b.ids )
     bonds = []
+    
     for ni in neighs:
         idi = ni[0]
         idx = im[idi]
-        if itype and (b.types[idx] != itype):
-            continue
-
         xi = b.x[idx]
+        type_i = b.types[idx]
+
         for idj in ni[1:]:
             jdx = im[idj]
+            type_j = b.types[jdx]
+            
             xj = b.x[jdx]
-            rij = b.domain.distance( xi, xj )
+            r, rij = b.meta.domain.distance( xi, xj )
+            bonds.append( [idi, idj, r] )
 
-            bonds.append( idi, idj, math.sqrt( np.dot(rij, rij) ) )
     return bonds
         
 
