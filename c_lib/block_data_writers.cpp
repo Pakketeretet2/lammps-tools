@@ -1,6 +1,7 @@
 #include "block_data_writers.h"
 #include "gsd/gsd.h"
 #include "dump_interpreter_gsd.h"
+#include "id_map.h"
 
 #include <fstream>
 
@@ -77,7 +78,7 @@ void write_block_lammps_data( const block_data &b, std::ostream &o )
 	o << "\n";
 	
 	std::string atom_style = "atomic";
-	if( b.atom_style == MOLECULAR )  atom_style = "molecular";
+	if( b.atom_style == MOLECULAR ) atom_style = "molecular";
 
 	o << "Atoms # " << atom_style << "\n\n";
 	for( py_int i = 0; i < b.N; ++i ){
@@ -85,8 +86,8 @@ void write_block_lammps_data( const block_data &b, std::ostream &o )
 		if( b.atom_style == MOLECULAR ){
 			o << " " << b.mol[i];
 		}
-		o << " " << b.x[i][0] << " " << b.x[i][1] << " "
-		  << b.x[i][2];
+		o << " " << b.types[i] << " " << b.x[i][0]
+		  << " " << b.x[i][1] << " " << b.x[i][2];
 
 		// If you ever support image flags or something, add here.
 		
@@ -219,6 +220,220 @@ void write_block_hoomd_gsd( const block_data &b, gsd_handle *gh )
 	delete [] type_names;
 }
 
+void read_block_lammps_data_body( std::istream &in, std::string &line,
+                                  block_data &b )
+{
+	std::vector<std::string> words = split(line);
+	
+	bool warned_image_flags = false;
+	bool warned_velocities = false;
+	bool warned_masses = false;
+	bool warned_bonds = false;
+	bool warned_angles = false;
+	bool warned_dihedrals = false;
+	bool warned_impropers = false;
+
+	if( words[0] == "Atoms" ){
+		if( words.size() > 3 && words[1] == "#" ){
+			// Contains descriptor of atom_style:
+			if( words[2] == "atomic" ){
+				b.atom_style = ATOMIC;
+			}else if( words[2] == "molecular" ){
+				b.atom_style = MOLECULAR;
+			}else{
+				std::cerr << "WARNING: atom style " << words[2]
+				          << " not known! Assuming atomic!\n";
+				b.atom_style = ATOMIC;
+			}
+		}
+		int n_expect = 5 + 1*(b.atom_style == MOLECULAR);
+		std::getline( in, line );
+		for( py_int i = 0; i < b.N; ++i ){
+			std::getline( in, line );
+			words = split(line);
+			int n_entries = words.size();
+			if( n_entries != n_expect &&
+			    n_entries != n_expect + 3 ){
+				std::cerr << "Unexpected number of columns!\n";
+				std::cerr << "i = " << i << ", b.N = " << b.N << "\n";
+				std::terminate();
+			}
+
+			std::stringstream ss(line);
+			ss >> b.ids[i];
+			if( b.atom_style == MOLECULAR ){
+				ss >> b.mol[i];
+			}
+			ss >> b.types[i];
+			ss >> b.x[i][0] >> b.x[i][1] >> b.x[i][2];
+			std::cerr << "x[i] = " << b.x[i][0] << " " << b.x[i][1]
+			          << " " << b.x[i][2] << "\n";
+			if( !warned_image_flags && (n_entries == n_expect+3) ){
+				std::cerr << "WARNING: Ignoring image flags.\n";
+				warned_image_flags = true;
+			}
+		}
+	}else if( words[0] == "Velocities" ){
+		int n_expect = 4;
+		std::getline( in, line );
+		id_map im( b.ids, b.N );
+
+		// Gotta add the other cols now.
+		dump_col vx( "vx", b.N );
+		dump_col vy( "vy", b.N );
+		dump_col vz( "vz", b.N );
+		
+		
+		
+		for( py_int i = 0; i < b.N; ++i ){
+			std::getline( in, line );
+			std::cerr << "line: " << line << "\n";
+			words = split(line);
+			int n_entries = words.size();
+			if( n_entries != n_expect ){
+				std::cerr << "Unexpected number of columns!\n";
+				std::cerr << "i = " << i << ", b.N = " << b.N << "\n";
+				std::terminate();
+			}
+
+			std::stringstream ss(line);
+			py_int idi;
+			ss >> idi;
+			py_int idx = im[idi];
+			ss >> vx.data[idx] >> vy.data[idx] >> vz.data[idx];
+		}
+
+	}else if( words[0] == "Masses" ){
+		std::getline( in, line );
+		std::getline( in, line );
+		for( int i = 0; i < b.Ntypes; ++i ){
+			
+		}
+	}else if( words[0] == "Bonds" ){
+		std::cerr << "WARNING: Ignoring bonds.\n";
+		warned_velocities = true;
+	}else if( words[0] == "Impropers" ){
+		std::cerr << "WARNING: Ignoring impropers.\n";
+		warned_velocities = true;
+	}else if( words[0] == "Dihedrals" ){
+		std::cerr << "WARNING: Ignoring dihedrals.\n";
+		warned_velocities = true;
+	}else if( words[0] == "Angles" ){
+		std::cerr << "WARNING: Ignoring angles.\n";
+		warned_velocities = true;
+	}else{
+		std::cerr << "Word " << words[0] << " not recognized!\n";
+		std::terminate();
+	}
+
+	while( std::getline(in,line) ){
+		if( !line.empty() ){
+			std::cerr << "Got line " << line << " before recursion.\n";
+			read_block_lammps_data_body( in, line, b );
+		}
+	}
+}
+
+block_data read_block_lammps_data( const std::string &fname )
+{
+	std::ifstream in(fname);
+	std::string line = "";
+
+	// Ignore first two lines:
+	std::getline(in,line);
+	std::getline(in,line);
+
+	// Read the header first.
+	py_int N = 0;
+	py_int Ntypes = 0;
+	py_int N_angles = 0;
+	py_int N_angle_types = 0;
+	py_int N_bonds = 0;
+	py_int N_bond_types = 0;
+
+	py_float xlo[3], xhi[3];
+
+	std::vector<std::string> body_headers =
+		{ "Atoms", "Velocities", "Masses", "Bonds",
+		  "Angles", "Impropers", "Dihedrals" };
+
+	block_data b;
+	
+	while( std::getline(in,line) ){
+		if( line.empty() ) continue;
+		
+		std::vector<std::string> words = split( line );
+		if( (words.size() < 2) &&
+		    std::find( body_headers.begin(), body_headers.end(),
+		               words[0] ) != body_headers.end() ){
+			b.top.N_bonds  = N_bonds;
+			b.top.N_angles = N_angles;
+			
+			b.init_topology();
+			std::cerr << "Hit " << words[0] << ", gonna read body.\n";
+			
+			read_block_lammps_data_body( in, line, b );
+			break;
+		}
+		
+		if( words[1] == "atoms" ){
+			N = std::stoi( words[0] );
+			b.init(N);
+		}else if( words[1] == "atom" && words[2] == "types" ){
+			Ntypes = std::stoi( words[0] );
+			b.init_per_type_arrays(Ntypes);
+		}else if( words[1] == "bonds" ){
+			N_bonds = std::stoi( words[0] );
+			if( b.atom_style == ATOMIC ){
+				std::cerr << "Bonds encountered for "
+					"atomic data!\n";
+			}
+			
+		}else if( words[1] == "bond" && words[2] == "types" ){
+			N_bond_types = std::stoi( words[0] );
+			if( b.atom_style == ATOMIC ){
+				std::cerr << "Bonds encountered for "
+					"atomic data!\n";
+			}
+			
+		}else if( words[1] == "angles" ){
+			N_angles = std::stoi( words[0] );
+			if( b.atom_style == ATOMIC ){
+				std::cerr << "Angles encountered for "
+					"atomic data!\n";
+			}
+						
+		}else if( words[1] == "angle" && words[2] == "types" ){
+			N_angle_types = std::stoi( words[0] );
+			if( b.atom_style == ATOMIC ){
+				std::cerr << "Angles encountered for "
+					"atomic data!\n";
+			}
+			
+		}else if( words.size() > 3 ){
+			if( words[2] == "xlo" && words[3] == "xhi" ){
+				xlo[0] = std::stof( words[0] );
+				xhi[0] = std::stof( words[1] );
+			}
+			if( words[2] == "ylo" && words[3] == "yhi" ){
+				xlo[1] = std::stof( words[0] );
+				xhi[1] = std::stof( words[1] );
+			}
+			if( words[2] == "zlo" && words[3] == "zhi" ){
+				xlo[2] = std::stof( words[0] );
+				xhi[2] = std::stof( words[1] );
+			}
+			
+		}else{
+			std::cerr << "Unrecognized line \"" << line
+			          << "\" encountered in header!\n";
+		}
+	}
+	
+	
+	return b;
+}
+
 
 extern "C" {
 	
@@ -232,13 +447,18 @@ void write_block_to_file( const block_data *bh, const char *fname,
 	std::cerr << "File format is " << file_format << " and Data format is "
 	          << data_format << ".\n";
 
+	
 	if( data_format == "LAMMPS" || data_format == "LAMMPS_DUMP" ){
 		if( file_format == "GZIP" ){
 			std::cerr << "GZIP not supported for LAMMPS yet!\n";
 		}else if( file_format == "BIN" ){
 			std::cerr << "BIN not supported for LAMMPS yet!\n";
 		}else{
-			write_block_lammps_dump( *bh, fname );
+			if( std::string(fname) == "-" ){
+				write_block_lammps_dump( *bh, std::cout );
+			} else {
+				write_block_lammps_dump( *bh, fname );
+			}
 		}
 	}else if( data_format == "LAMMPS_DATA" ){
 		if( file_format == "GZIP" ){
@@ -246,7 +466,11 @@ void write_block_to_file( const block_data *bh, const char *fname,
 		}else if( file_format == "BIN" ){
 			std::cerr << "BIN not supported for LAMMPS yet!\n";
 		}else{
-			write_block_lammps_data( *bh, fname );
+			if( std::string(fname) == "-" ){
+				write_block_lammps_data( *bh, std::cout );
+			} else {
+				write_block_lammps_dump( *bh, fname );
+			}
 		}		
 	}else if( data_format == "HOOMD" ){
 		if( file_format == "GZIP" || file_format == "PLAIN" ){
@@ -259,7 +483,24 @@ void write_block_to_file( const block_data *bh, const char *fname,
 		std::cerr << "Data format " << data_format
 		          << " not recognized!\n";
 	}
+}
+
+
+py_int read_block_from_data_file( block_data *bh, const char *fname,
+                                  const char *dformat )
+{
+	std::string dump_format( dformat );
+	if( dump_format != "LAMMPS_DATA" ){
+		std::cerr << "Don't know how to read in format "
+		          << dformat << "\n";
+		return 0;
+	}
+	block_data tmp = read_block_lammps_data( fname );
+	// Copy the temporary over the pointed one.
+	// bh->resize( tmp.N );
+	*bh = tmp;
 	
+	return bh->N;
 }
 
 } // extern "C"

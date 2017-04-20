@@ -10,14 +10,14 @@ block_data::block_data() : x(nullptr), x_(nullptr), ids(nullptr),
                            types(nullptr), mol(nullptr), N(0),
                            tstep(0), xlo{0,0,0}, xhi{0,0,0},
                            periodic(0), atom_style(atom_styles::ATOMIC),
-                           boxline("       ")
+                           boxline("       "), Ntypes(0), mass(nullptr)
 {}
 
 block_data::block_data( int N ) : x(nullptr), x_(nullptr), ids(nullptr),
                                   types(nullptr), mol(nullptr), N(0),
                                   tstep(0), xlo{0,0,0}, xhi{0,0,0},
                                   periodic(0), atom_style(atom_styles::ATOMIC),
-                                  boxline("       ")
+                                  boxline("       "), Ntypes(0), mass(nullptr)
 {
 	init(N);
 }
@@ -33,7 +33,7 @@ block_data::block_data( const block_data &o )
 // TODO: Rewrite this into copy & swap:
 void block_data::operator=( const block_data &o )
 {
-	init( o.N );
+	resize( o.N );
 	// This needs to copy _all_ the fields of block_data, _except_ x
 	// because x refers to the memory of x_!
 	std::copy( o.x_,    o.x_    + 3*N, x_ );
@@ -91,6 +91,8 @@ void block_data::delete_members()
 	delete [] ids;
 	delete [] types;
 	delete [] mol;
+
+	if( mass ) delete [] mass;
 }
 
 
@@ -124,6 +126,12 @@ void block_data::init( int NN )
 	for( py_int i = 0; i < N; ++i ){
 		x[i] = x_ + 3*i;
 	}
+}
+
+void block_data::init_per_type_arrays( int NNtypes )
+{
+	Ntypes = NNtypes;
+	mass = new double[NNtypes+1];
 }
 
 } // extern "C";
@@ -263,6 +271,52 @@ void set_block_data( block_data *b,
 	
 	
 }
+
+
+void get_block_data( block_data *b,
+                     py_int *N, py_int *t, py_float *x, py_int *ids,
+                     py_int *types, py_int *mol,
+                     py_float *xlo, py_float *xhi, py_int *periodic,
+                     char *boxline )
+{
+	std::cerr << "Setting block data on block at " << b << ".\n";
+	*N = b->N;
+	*t = b->tstep;
+
+	xlo[0] = b->xlo[0];
+	xlo[1] = b->xlo[1];
+	xlo[2] = b->xlo[2];
+
+	xhi[0] = b->xhi[0];
+	xhi[1] = b->xhi[1];
+	xhi[2] = b->xhi[2];
+
+	b->boxline.copy( boxline, 0, b->boxline.size() );
+	boxline[b->boxline.size()] = '\0';
+	// b->resize(N);
+	
+	for( int i = 0; i < b->N; ++i ){
+		
+		x[ 3*i + 0 ] = b->x[i][0];
+		x[ 3*i + 1 ] = b->x[i][1];
+		x[ 3*i + 2 ] = b->x[i][2];
+		             
+		ids[i]   = b->ids[i];
+		types[i] = b->types[i];
+
+		if( b->mol && mol ){
+			mol[i] = b->mol[i];
+		}
+	}
+	
+	/*
+	  std::cerr << "After setting, this is block_data:\n";
+	  print_block_data_lmp( *b, std::cerr );
+	*/
+	
+	
+}
+
 	
 void free_block_data( block_data *b )
 {

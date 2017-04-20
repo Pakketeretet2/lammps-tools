@@ -16,6 +16,7 @@
 #include <numeric>
 #include <algorithm>
 #include <fstream>
+#include <vector>
 
 // #include "list.h"
 
@@ -42,6 +43,15 @@ inline std::string rstrip( std::string s, char delim )
 	std::size_t top = s.find_last_not_of( " \t" ) + 1;
 	return s.substr( 0, top );
 }
+
+
+/**
+   Splits line into a list of words, splitting on any whitespace.
+   
+   \param    line The line to split.
+   \returns       A vector of words.
+ */
+std::vector<std::string> split( std::string line );
 
 
 inline int word_count( const std::string &s )

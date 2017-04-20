@@ -180,13 +180,13 @@ int  dump_reader_next_block( dump_reader_handle *dh );
    and stores those in the passed fields.
 
    \param dh          Ptr to the dump_reader_handle that is to read the file.
-   \param tstep       a
-   \param N           a
-   \param xlo         a
-   \param xhi         a
-   \param periodic    a
-   \param boxline     a
-   \param atom_style  a
+   \param tstep       Time step of the block_data.
+   \param N           Number of atoms
+   \param xlo         Lower bounds of simulation box
+   \param xhi         Upper bounds of simulation box
+   \param periodic    Periodic bits
+   \param boxline     Line describing the box
+   \param atom_style  The atom stle of the block_data
 */
 void dump_reader_get_block_meta( dump_reader_handle *dh,
                                  py_int *tstep, py_int *N,

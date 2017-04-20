@@ -98,7 +98,9 @@ class block_data:
     #  \param x      Particle positions
     #  \param mol    Molecule ids
     def __init__(self,meta,ids,types, x, mol = None):
+        self.init_from_arrays(meta,ids,types,x,mol)
 
+    def init_from_arrays(self,meta,ids,types, x, mol = None):
         # Check lengths:
         if not all(meta.N == length for length in
                    [ len(ids), len(types), len(x) ] ):
@@ -117,6 +119,19 @@ class block_data:
             self.meta.atom_style = "molecular"
         
         self.other_cols = []
+
+    @classmethod
+    def init_empty(cls,N):
+        dom = domain_data(np.zeros(3,dtype=float),
+                          np.zeros(3,dtype=float),
+                          0,
+                          "ITEM: BOX BOUNDS ff ff ff")
+        return cls( meta  = block_meta(0,N,dom),
+                    ids   = np.zeros(N, dtype=int),
+                    types = np.zeros(N, dtype=int),
+                    x     = np.zeros([N,3], dtype=float),
+                    mol   = None )
+
 
 
 ## A class for additional dump columns.
@@ -276,22 +291,29 @@ def block_data_from_foreign( X, ids, types, mol, periodic, xlo, xhi,
 def block_to_data( b, fname ):
     bh = new_block_data_cpp( b )
     write_block_data( b, fname, "PLAIN", "LAMMPS_DATA" )
-    
     free_block_data_cpp( bh )
 
 
-def new_block_data_cpp( b ):
-    """! Creates a C++-style block_data struct and returns the handle to it. """
+
+## Creates a C++-style block_data struct and returns the handle to it.
+#
+#  \param    b block_data object to which the C++ struct is initialised.
+#
+# \returns   A handle to the C++ object.
+def new_block_data_cpp( b = None ):
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     bh = lammpstools.new_block_data()
 
+    if b is None:
+        return bh
+    
     if b.mol is None:
         molref = None
     else:
         molref = b.mol.ctypes.data_as(POINTER(c_longlong))
         
     boxline_buff = create_string_buffer( b.meta.domain.box_line.encode('ascii') )
-
+    
     lammpstools.set_block_data( bh, b.meta.N, b.meta.t,
                                 b.x.ctypes.data_as(POINTER(c_double)),
                                 b.ids.ctypes.data_as(POINTER(c_longlong)),
@@ -300,16 +322,43 @@ def new_block_data_cpp( b ):
                                 b.meta.domain.xlo.ctypes.data_as(POINTER(c_double)),
                                 b.meta.domain.xhi.ctypes.data_as(POINTER(c_double)),
                                 b.meta.domain.periodic, boxline_buff )
-    
-    
     return bh
+
+
+def get_block_data_cpp( bh, N ):
+    """! Creates a Python-style block_data struct from given C++ handle. """
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+    b = block_data.init_empty(N)
+    
+    if b.mol is None:
+        molref = None
+    else:
+        molref = b.mol.ctypes.data_as(POINTER(c_longlong))
+        
+    boxline_buff = create_string_buffer( b.meta.domain.box_line.encode('ascii') )
+    Nref = c_int64()
+    tref = c_int64()
+
+    lammpstools.get_block_data( bh,
+                                byref(Nref),
+                                byref(tref),
+                                b.x.ctypes.data_as(POINTER(c_double)),
+                                b.ids.ctypes.data_as(POINTER(c_longlong)),
+                                b.types.ctypes.data_as(POINTER(c_longlong)),
+                                molref,
+                                b.meta.domain.xlo.ctypes.data_as(POINTER(c_double)),
+                                b.meta.domain.xhi.ctypes.data_as(POINTER(c_double)),
+                                b.meta.domain.periodic, boxline_buff )
+    b.meta.t = tref.value
+    return b
+
+
 
         
 def free_block_data_cpp( bh ):
     """! Deletes a C++-style block_data struct. """
     lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
     lammpstools.free_block_data( bh )
-    
 
 def write_block_data( b, file_name, file_format, data_format ):
     """! Writes given block_data to specified file and format.
@@ -321,7 +370,7 @@ def write_block_data( b, file_name, file_format, data_format ):
         write_block_data_cpp( bh, file_name, file_format, data_format )
     finally:
         free_block_data_cpp( bh )
-        
+
                       
 def write_block_data_cpp( bh, file_name, file_format, data_format ):
     """! Writes given block_data to specified file and format.
@@ -340,4 +389,21 @@ def write_block_data_cpp( bh, file_name, file_format, data_format ):
     
     lammpstools.write_block_to_file( bh, fname, fformat, dformat )
 
+## Reads in a block_data object from a data file.
+#
+#  \param fname  The name of the data file.
+#
+def read_data( fname ):
+    lammpstools = cdll.LoadLibrary("/usr/local/lib/liblammpstools.so")
+    bh = new_block_data_cpp()
+    fname_buff   = create_string_buffer( fname.encode('ascii') )
+    dformat_buff = create_string_buffer( "LAMMPS_DATA".encode('ascii') )
+    
+    N = lammpstools.read_block_from_data_file( bh, fname_buff, dformat_buff )
+    print("On the C++ side there is a block with ", N, " atoms waiting.")
+    b = get_block_data_cpp( bh, N )
+    
 
+    free_block_data_cpp( bh )
+    return b
+    

@@ -22,12 +22,33 @@ struct dump_col
 	{
 		data.resize( M );
 	}
-	
+
+	dump_col(){}
+	dump_col(const char *name, py_int N) : header(name), data(N){}
 };
 
 enum atom_styles {
 	ATOMIC,
 	MOLECULAR
+};
+
+/**
+   Describes the topology of a given molecular system,
+   i. e., bonds, angles, etc.
+*/
+struct topology {
+	topology() : N_bonds(0), N_bond_types(0), N_angles(0), N_angle_types(0),
+	             N_dihedrals(0), N_dihedral_types(0), N_impropers(0),
+	             N_improper_types(0)
+	{}
+	py_int N_bonds;
+	py_int N_bond_types;
+	py_int N_angles;
+	py_int N_angle_types;
+	py_int N_dihedrals;
+	py_int N_dihedral_types;
+	py_int N_impropers;
+	py_int N_improper_types;
 };
 
 
@@ -46,7 +67,10 @@ struct block_data
 
 	std::string boxline;
 	std::vector<dump_col> other_cols;
-	
+
+	topology top;
+	int Ntypes;
+	double *mass;
 
 	block_data();
 	block_data( int N );
@@ -55,11 +79,13 @@ struct block_data
 	// Deliberately void to prevent assignment chaining.
 	void operator=( const block_data &o );
 	block_data( const block_data &o );
-	void swap( block_data &o ) throw(); // For copy-and-swap idiom.
+	//void swap( block_data &o ) throw(); // For copy-and-swap idiom.
 	
 	void resize( int N );
 	void init( int N );
-
+	void init_per_type_arrays( int Ntypes );
+	void init_topology()
+	{}
 private:
 	void delete_members();
 };
@@ -150,6 +176,13 @@ void set_block_data( block_data *b,
                      py_int *types, py_int *mol,
                      py_float *xlo, py_float *xhi, py_int periodic,
                      const char* boxline );
+
+void get_block_data( block_data *b,
+                     py_int *N, py_int *t, py_float *x, py_int *ids,
+                     py_int *types, py_int *mol,
+                     py_float *xlo, py_float *xhi, py_int *periodic,
+                     char *boxline );
+
 void free_block_data( block_data * );
 
 }
