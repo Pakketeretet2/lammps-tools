@@ -400,10 +400,24 @@ def read_data( fname ):
     dformat_buff = create_string_buffer( "LAMMPS_DATA".encode('ascii') )
     
     N = lammpstools.read_block_from_data_file( bh, fname_buff, dformat_buff )
-    print("On the C++ side there is a block with ", N, " atoms waiting.")
     b = get_block_data_cpp( bh, N )
     
 
     free_block_data_cpp( bh )
+    return b
+    
+
+## Makes a block_data object from the block_meta and raw XYZ-coordinates.
+#
+#  \param meta      The given block_meta
+#  \param xyz_ptx   XYZ coordinates as an np.array.
+#
+#  \returns         A block_data object of the combo of the two.
+def combine_meta_xyz( meta, xyz_pts ):
+    N     = len( xyz_pts )
+    ids   = np.array( [ i for i in range(1,N+1) ], dtype = int )
+    types = np.ones( N, dtype = int )
+
+    b = block_data( meta, ids, types, xyz_pts )
     return b
     

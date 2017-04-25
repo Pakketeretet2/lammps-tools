@@ -111,7 +111,6 @@ class dumpreader_cpp:
                                                 byref(atom_style) )
         
         box_line = str( box_line_buff, 'ascii' )
-        print("box_line is \"", box_line, "\".", file=sys.stderr)
         x     = np.empty( [N.value, 3], dtype = float )
         ids   = np.empty( N.value, dtype = int )
         types = np.empty( N.value, dtype = int )

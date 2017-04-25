@@ -1,6 +1,7 @@
 #include "dump_interpreter_lammps.h"
-
 #include "util.h"
+
+#include <fstream>
 
 
 #ifdef VERBOSE_LIB
@@ -20,7 +21,7 @@ dump_interpreter_lammps::dump_interpreter_lammps( const std::string &dname,
 {
 	if( file_type == dump_reader::PLAIN ){
 		r = new text_reader_plain( dname );
-	}else{
+	}else if( file_type == dump_reader::GZIP ){
 		r = new text_reader_gzip( dname );
 	}
 	if( !r ){
@@ -64,7 +65,7 @@ int dump_interpreter_lammps::next_block_meta( block_data &block )
 			dims.str(""); dims.clear();
 			dims.str( line );
 			dims >> last_meta.xlo[2] >> last_meta.xhi[2];
-		}else if( starts_with( line, "ITEM: ATOMS " ) ){
+		}else if( starts_with( line, "ITEM: ATOMS" ) ){
 			// Stop there.
 			last_line = line;
 			return 0;
@@ -80,27 +81,24 @@ int dump_interpreter_lammps::next_block_meta( block_data &block )
 int dump_interpreter_lammps::next_block_body( block_data &block )
 {
 	std::string line = last_line;
+	
+	block.copy_meta( last_meta );
+	block.resize( block.N );
 
-	block.atom_style = atom_style;
-	block.boxline    = last_meta.boxline;
-	block.tstep      = last_meta.tstep;
+	MY_CERR << "Checking line \"" << line << "\"\n";
 	
-	block.xlo[0] = last_meta.xlo[0];
-	block.xlo[1] = last_meta.xlo[1];
-	block.xlo[2] = last_meta.xlo[2];
-		
-	block.xhi[0] = last_meta.xhi[0];
-	block.xhi[1] = last_meta.xhi[1];
-	block.xhi[2] = last_meta.xhi[2];
-	block.N      = last_meta.N;
-	
-	block.resize( block.N );	
-	
-	if( starts_with( line, "ITEM: ATOMS " ) ){
+	if( starts_with( line, "ITEM: ATOMS" ) ){
 		// Figure out which column maps which.
 		// Read out the next block.N lines.
 		if( headers.empty() ){
-			set_headers( line.substr( 12 ) );
+			if( line == "ITEM: ATOMS" ){
+				dump_style = ATOMIC;
+				set_headers( "" );
+				n_cols = 5;
+			}else{
+				dump_style = CUSTOM;
+				set_headers( line.substr( 12 ) );
+			}
 		}
 		
 		double Lx = block.xhi[0] - block.xlo[0];
@@ -202,7 +200,21 @@ void dump_interpreter_lammps::set_headers( const std::string &h_line )
 {
 	// std::cerr << "Figuring out atom columns...\n";
 	// std::cerr << "Headers: " << h_line << "\n";
+	if( h_line.empty() ){
+		// This happens if the dump style was atomic. In that case
+		// the headers are preset.
+		std::cerr << "Headers missing, assuming file was dump atom.\n";
+		id_idx = 0;
+		type_idx = 1;
+		x_idx = 2;
+		y_idx = 3;
+		z_idx = 4;
 
+		atom_style = atom_styles::ATOMIC;
+		last_meta.atom_style = atom_style;
+		return;
+	}
+	
 	std::stringstream h( h_line );
 	int header_idx = 0;
 

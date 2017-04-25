@@ -29,7 +29,7 @@ void write_block_lammps_dump( const block_data &b, std::ostream &o )
 	}
 	
 	o << "ITEM: TIMESTEP\n" << b.tstep << "\nITEM: NUMBER OF ATOMS\n";
-	o << b.N << "\nITEM: BOX BOUNDS " << b.boxline << "\n";
+	o << b.N << "\n" << b.boxline << "\n";
 	o << b.xlo[0] << " " << b.xhi[0] << "\n";
 	o << b.xlo[1] << " " << b.xhi[1] << "\n";
 	o << b.xlo[2] << " " << b.xhi[2] << "\n";
@@ -232,9 +232,12 @@ void read_block_lammps_data_body( std::istream &in, std::string &line,
 	bool warned_angles = false;
 	bool warned_dihedrals = false;
 	bool warned_impropers = false;
+	bool warned_pair_coeffs = false;
+	bool warned_pairij_coeffs = false;
+	
 
 	if( words[0] == "Atoms" ){
-		if( words.size() > 3 && words[1] == "#" ){
+		if( words.size() > 2 && words[1] == "#" ){
 			// Contains descriptor of atom_style:
 			if( words[2] == "atomic" ){
 				b.atom_style = ATOMIC;
@@ -304,20 +307,46 @@ void read_block_lammps_data_body( std::istream &in, std::string &line,
 		std::getline( in, line );
 		std::getline( in, line );
 		for( int i = 0; i < b.Ntypes; ++i ){
-			
+			py_int id;
+			std::stringstream ss(line);
+			ss >> id;
+			ss >> b.mass[ id ];
+			std::getline( in, line );
 		}
+		
+	}else if( words[0] == "Pair" && words[1] == "Coeffs" ){
+		std::cerr << "WARNING: Ignoring Pair coeffs.\n";
+		warned_pair_coeffs = true;
+		std::getline( in, line );
+		std::getline( in, line );
+		for( int i = 0; i < b.Ntypes; ++i ){
+			std::getline( in, line );
+		}
+		
+	}else if( words[0] == "PairIJ" && words[1] == "Coeffs" ){
+		std::cerr << "WARNING: Ignoring PairIJ coeffs.\n";
+		warned_pairij_coeffs = true;
+		std::getline( in, line );
+		std::getline( in, line );
+		for( int i = 0; i < b.Ntypes; ++i ){
+			for( int j = 0; j < b.Ntypes; ++j ){			
+				std::cerr << "Skip line \"" << line << "\".\n";
+				std::getline( in, line );
+			}
+		}
+		
 	}else if( words[0] == "Bonds" ){
 		std::cerr << "WARNING: Ignoring bonds.\n";
-		warned_velocities = true;
+		warned_bonds = true;
 	}else if( words[0] == "Impropers" ){
 		std::cerr << "WARNING: Ignoring impropers.\n";
-		warned_velocities = true;
+		warned_impropers = true;
 	}else if( words[0] == "Dihedrals" ){
 		std::cerr << "WARNING: Ignoring dihedrals.\n";
-		warned_velocities = true;
+		warned_dihedrals = true;
 	}else if( words[0] == "Angles" ){
 		std::cerr << "WARNING: Ignoring angles.\n";
-		warned_velocities = true;
+		warned_angles = true;
 	}else{
 		std::cerr << "Word " << words[0] << " not recognized!\n";
 		std::terminate();
@@ -347,24 +376,21 @@ block_data read_block_lammps_data( const std::string &fname )
 	py_int N_bonds = 0;
 	py_int N_bond_types = 0;
 
-	py_float xlo[3], xhi[3];
-
 	std::vector<std::string> body_headers =
 		{ "Atoms", "Velocities", "Masses", "Bonds",
 		  "Angles", "Impropers", "Dihedrals" };
 
 	block_data b;
-	
+	int lc = 1;
 	while( std::getline(in,line) ){
 		if( line.empty() ) continue;
-		
+
 		std::vector<std::string> words = split( line );
-		if( (words.size() < 2) &&
-		    std::find( body_headers.begin(), body_headers.end(),
+		if( std::find( body_headers.begin(), body_headers.end(),
 		               words[0] ) != body_headers.end() ){
+			
 			b.top.N_bonds  = N_bonds;
 			b.top.N_angles = N_angles;
-			
 			b.init_topology();
 			
 			read_block_lammps_data_body( in, line, b );
@@ -407,16 +433,16 @@ block_data read_block_lammps_data( const std::string &fname )
 			
 		}else if( words.size() > 3 ){
 			if( words[2] == "xlo" && words[3] == "xhi" ){
-				xlo[0] = std::stof( words[0] );
-				xhi[0] = std::stof( words[1] );
+				b.xlo[0] = std::stof( words[0] );
+				b.xhi[0] = std::stof( words[1] );
 			}
 			if( words[2] == "ylo" && words[3] == "yhi" ){
-				xlo[1] = std::stof( words[0] );
-				xhi[1] = std::stof( words[1] );
+				b.xlo[1] = std::stof( words[0] );
+				b.xhi[1] = std::stof( words[1] );
 			}
 			if( words[2] == "zlo" && words[3] == "zhi" ){
-				xlo[2] = std::stof( words[0] );
-				xhi[2] = std::stof( words[1] );
+				b.xlo[2] = std::stof( words[0] );
+				b.xhi[2] = std::stof( words[1] );
 			}
 			
 		}else{
@@ -438,9 +464,7 @@ void write_block_to_file( const block_data *bh, const char *fname,
 	std::string data_format( dformat );
 	std::string file_format( fformat );
 	
-	std::cerr << "Writing block data at " << bh << " to " << fname << "\n";
-	std::cerr << "File format is " << file_format << " and Data format is "
-	          << data_format << ".\n";
+	std::cerr << "Writing block data at " << bh << " to " << fname << " as ";
 
 	
 	if( data_format == "LAMMPS" || data_format == "LAMMPS_DUMP" ){
@@ -449,6 +473,7 @@ void write_block_to_file( const block_data *bh, const char *fname,
 		}else if( file_format == "BIN" ){
 			std::cerr << "BIN not supported for LAMMPS yet!\n";
 		}else{
+			std::cerr << "plain text LAMMPS dump.\n";
 			if( std::string(fname) == "-" ){
 				write_block_lammps_dump( *bh, std::cout );
 			} else {
@@ -456,25 +481,29 @@ void write_block_to_file( const block_data *bh, const char *fname,
 			}
 		}
 	}else if( data_format == "LAMMPS_DATA" ){
+		
 		if( file_format == "GZIP" ){
 			std::cerr << "GZIP not supported for LAMMPS yet!\n";
 		}else if( file_format == "BIN" ){
 			std::cerr << "BIN not supported for LAMMPS yet!\n";
 		}else{
+			std::cerr << "plain text LAMMPS data.\n";
 			if( std::string(fname) == "-" ){
 				write_block_lammps_data( *bh, std::cout );
 			} else {
-				write_block_lammps_dump( *bh, fname );
+				write_block_lammps_data( *bh, fname );
 			}
-		}		
+		}
 	}else if( data_format == "HOOMD" ){
 		if( file_format == "GZIP" || file_format == "PLAIN" ){
 			std::cerr << file_format
 			          << " not supported for HOOMD data!\n";
 		}else{
+			std::cerr << "HOOMD-blue GSD file.\n";
 			write_block_hoomd_gsd( *bh, fname );
 		}
 	}else{
+		std::cerr << "no idea!\n";
 		std::cerr << "Data format " << data_format
 		          << " not recognized!\n";
 	}

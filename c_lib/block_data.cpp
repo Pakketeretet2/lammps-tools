@@ -84,6 +84,24 @@ void block_data::swap( block_data &o ) throw()
 }
 */
 
+
+void block_data::copy_meta( const block_data &o )
+{
+	this->atom_style = o.atom_style;
+	this->boxline    = o.boxline;
+	this->tstep      = o.tstep;
+	
+	this->xlo[0] = o.xlo[0];
+	this->xlo[1] = o.xlo[1];
+	this->xlo[2] = o.xlo[2];
+		
+	this->xhi[0] = o.xhi[0];
+	this->xhi[1] = o.xhi[1];
+	this->xhi[2] = o.xhi[2];
+	this->N      = o.N;
+
+}
+
 void block_data::delete_members()
 {
 	delete [] x_;

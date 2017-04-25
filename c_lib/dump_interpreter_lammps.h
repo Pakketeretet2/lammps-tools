@@ -5,14 +5,6 @@
 #include "dump_reader.h"
 #include "text_readers.h"
 
-struct block_meta
-{
-	py_int tstep;
-	py_int N;
-	std::string boxline;
-
-	py_float xlo[3], xhi[3];
-};
 
 class dump_interpreter_lammps : public dump_interpreter
 {
@@ -35,6 +27,11 @@ public:
 		if( r ) return r->good();
 		else    return false;
 	}
+
+	enum dump_styles {
+		ATOMIC = 0,
+		CUSTOM
+	};
 	
 private:
 	enum { BIT_X = 1,
@@ -59,7 +56,9 @@ private:
 	int atom_style;
 	int scaled;
 	std::string last_line;
-	block_meta last_meta;
+	block_data last_meta;
+
+	int dump_style;
 
 	void set_headers( const std::string &h_line );
 };

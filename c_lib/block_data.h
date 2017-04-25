@@ -80,6 +80,8 @@ struct block_data
 	void operator=( const block_data &o );
 	block_data( const block_data &o );
 	//void swap( block_data &o ) throw(); // For copy-and-swap idiom.
+
+	void copy_meta( const block_data &o );
 	
 	void resize( int N );
 	void init( int N );
@@ -89,6 +91,7 @@ struct block_data
 private:
 	void delete_members();
 };
+
 
 
 // void copy( block_data &b, const block_data &source );

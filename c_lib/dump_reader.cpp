@@ -10,6 +10,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 
 #include "dump_interpreter_lammps.h"
+#include "dump_interpreter_lammps_bin.h"
 #include "dump_interpreter_dcd.h"
 #include "dump_interpreter_gsd.h"
 
@@ -38,6 +39,8 @@ void dump_reader::guess_file_type( const std::string &fname )
 {
 	if( ends_with( fname, ".gz" ) ){
 		file_format = GZIP;
+	}else if( ends_with( fname, ".bin" ) ){
+		file_format = BIN;
 	}else{
 		std::cerr << "File format assumed to be plain text.\n";
 		file_format = PLAIN;
@@ -50,8 +53,13 @@ void dump_reader::guess_dump_type( const std::string &fname )
 		dump_format = GSD;
 	}else if( ends_with( fname, ".dump" ) ){
 		dump_format = LAMMPS;
+		file_format = PLAIN;
 	}else if( ends_with( fname, ".dump.gz" ) ){
 		dump_format = LAMMPS;
+		file_format = GZIP;
+	}else if( ends_with( fname, ".dump.bin" ) ){
+		dump_format = LAMMPS;
+		file_format = BIN;
 	}else if( ends_with( fname, ".dcd" ) ){
 		dump_format = NAMD;
 		file_format = BIN;
@@ -75,8 +83,10 @@ void dump_reader::setup_interpreter( const std::string &fname )
 	if( dump_format == LAMMPS ){
 		if( file_format == PLAIN ){
 			interp = new dump_interpreter_lammps( fname );
-		}else{
-			interp = new dump_interpreter_lammps( fname, 1 );
+		}else if( file_format == GZIP ){
+			interp = new dump_interpreter_lammps( fname, GZIP );
+		}else if( file_format == BIN ){
+			interp = new dump_interpreter_lammps_bin( fname, BIN );
 		}
 	}else if( dump_format == GSD ){
 		interp = new dump_interpreter_gsd( fname );
